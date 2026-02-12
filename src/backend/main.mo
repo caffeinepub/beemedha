@@ -8,39 +8,73 @@ import Runtime "mo:core/Runtime";
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Int "mo:core/Int";
+import Nat "mo:core/Nat";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   type Category = {
-    #rawForest;
-    #organicWild;
-    #herbalInfused;
-    #honeyComb;
+    #beeProducts;
+    #naturalHoney;
+    #rawHoney;
   };
 
-  type AvailabilityStatus = {
+  public type AvailabilityStatus = {
     #inStock;
     #limited;
     #outOfStock;
   };
 
-  type Product = {
+  public type Price = {
+    listPrice : Float;
+    salePrice : ?Float;
+  };
+
+  module Product {
+    public func compareByCreated(a : Product, b : Product) : Order.Order {
+      Int.compare(b.timestamp, a.timestamp);
+    };
+  };
+
+  public type Product = {
     id : Nat;
     name : Text;
     description : Text;
     category : Category;
-    price : Float;
-    images : [Text];
+    price : Price;
+    image : Text;
     availability : AvailabilityStatus;
     created : Time.Time;
     timestamp : Time.Time;
+    variants : ?ProductVariants;
+    stock : Nat;
+    isDeleted : Bool;
   };
 
-  type ProductUpdate = {
+  public type ProductVariants = {
+    #weight : [WeightVariant];
+    #flavor : [FlavorVariant];
+  };
+
+  public type WeightVariant = {
+    weight : Nat;
+    description : Text;
+    price : Price;
+  };
+
+  public type FlavorVariant = {
+    flavor : Text;
+    description : Text;
+    price : Price;
+    weight : Nat;
+  };
+
+  public type ProductUpdate = {
     id : Nat;
     productUpdateType : ProductUpdateType;
     productId : Nat;
@@ -48,8 +82,14 @@ actor {
     timestamp : Time.Time;
   };
 
-  type ProductUpdateType = { #newHarvest; #seasonalAvailability; #priceUpdate; #limitedTimeOffer };
-  type ContactFormSubmission = {
+  public type ProductUpdateType = {
+    #newHarvest;
+    #seasonalAvailability;
+    #priceUpdate;
+    #limitedTimeOffer;
+  };
+
+  public type ContactFormSubmission = {
     id : Nat;
     name : Text;
     email : Text;
@@ -61,16 +101,10 @@ actor {
     name : Text;
   };
 
-  module Product {
-    public func compareProductsByCreated(a : Product, b : Product) : Order.Order {
-      Int.compare(b.timestamp, a.timestamp);
-    };
-  };
-
   let nextProductIdMap = Map.empty<Text, Nat>();
   var nextUpdateId = 0;
   var nextContactId = 0;
-  let products = Map.empty<Nat, Product>();
+  var products = Map.empty<Nat, Product>();
   let updates = Map.empty<Nat, ProductUpdate>();
   let contacts = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
@@ -102,9 +136,11 @@ actor {
     name : Text,
     description : Text,
     category : Category,
-    price : Float,
-    images : [Text],
+    price : Price,
+    image : Text,
     availability : AvailabilityStatus,
+    variants : ?ProductVariants,
+    stock : Nat,
   ) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can create products");
@@ -117,10 +153,13 @@ actor {
       description;
       category;
       price;
-      images;
+      image;
       availability;
       created = timestamp;
       timestamp;
+      variants;
+      stock;
+      isDeleted = false;
     };
     products.add(productId, product);
     productId;
@@ -131,9 +170,11 @@ actor {
     name : Text,
     description : Text,
     category : Category,
-    price : Float,
-    images : [Text],
+    price : Price,
+    image : Text,
     availability : AvailabilityStatus,
+    variants : ?ProductVariants,
+    stock : Nat,
   ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update products");
@@ -149,10 +190,13 @@ actor {
       description;
       category;
       price;
-      images;
+      image;
       availability;
       created = product.created;
       timestamp = Time.now();
+      variants;
+      stock;
+      isDeleted = false;
     };
     products.add(id, updatedProduct);
   };
@@ -161,10 +205,17 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can delete products");
     };
-    switch (products.get(id)) {
+    let product = switch (products.get(id)) {
       case (null) { Runtime.trap("Product not found") };
-      case (?_) { products.remove(id) };
+      case (?p) { p };
     };
+
+    if (product.isDeleted) {
+      Runtime.trap("Product already deleted");
+    };
+
+    let updatedProduct = { product with isDeleted = true };
+    products.add(id, updatedProduct);
   };
 
   // Product Update Management (Admin-only)
@@ -214,56 +265,72 @@ actor {
     contactId;
   };
 
-  // Public Query Functions (No authorization needed)
+  // Helper function to filter deleted products for non-admin users
+  func filterDeletedProducts(caller : Principal, product : Product) : Bool {
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      true; // Admins can see all products including deleted ones
+    } else {
+      not product.isDeleted; // Non-admins only see non-deleted products
+    };
+  };
+
+  // Public Query Functions (Filter deleted products for non-admins)
   public query ({ caller }) func getProduct(id : Nat) : async ?Product {
-    products.get(id);
+    switch (products.get(id)) {
+      case (null) { null };
+      case (?product) {
+        if (filterDeletedProducts(caller, product)) {
+          ?product;
+        } else {
+          null;
+        };
+      };
+    };
   };
 
   public query ({ caller }) func getAllProducts() : async [Product] {
-    let list = List.empty<Product>();
-    for (product in products.values()) {
-      list.add(product);
-    };
-    list.toArray();
+    products.values().toArray().filter(
+      func(product) {
+        filterDeletedProducts(caller, product);
+      }
+    );
   };
 
   public query ({ caller }) func getProductsByCategory(category : Category) : async [Product] {
-    let filtered = List.empty<Product>();
-    for (product in products.values()) {
-      if (product.category == category) {
-        filtered.add(product);
-      };
-    };
-    let result = filtered.toArray();
-    result.sort(Product.compareProductsByCreated);
+    products.values().toArray().filter(
+      func(product) {
+        product.category == category and filterDeletedProducts(caller, product);
+      }
+    );
   };
 
   public query ({ caller }) func getAllProductUpdates() : async [ProductUpdate] {
-    let list = List.empty<ProductUpdate>();
-    for (update in updates.values()) {
-      list.add(update);
-    };
-    list.toArray();
+    updates.values().toArray();
   };
 
   public query ({ caller }) func getProductUpdatesByType(productUpdateType : ProductUpdateType) : async [ProductUpdate] {
-    let filtered = List.empty<ProductUpdate>();
-    for (update in updates.values()) {
-      if (update.productUpdateType == productUpdateType) {
-        filtered.add(update);
-      };
-    };
-    filtered.toArray();
+    updates.values().toArray().filter(
+      func(update) {
+        update.productUpdateType == productUpdateType;
+      }
+    );
   };
 
   public query ({ caller }) func getProductUpdatesByProduct(productId : Nat) : async [ProductUpdate] {
-    let filtered = List.empty<ProductUpdate>();
-    for (update in updates.values()) {
-      if (update.productId == productId) {
-        filtered.add(update);
-      };
-    };
-    filtered.toArray();
+    updates.values().toArray().filter(
+      func(update) {
+        update.productId == productId;
+      }
+    );
+  };
+
+  // Public Query for Limited Products (Filter deleted products)
+  public query ({ caller }) func getLimitedProducts() : async [Product] {
+    products.values().toArray().filter(
+      func(product) {
+        product.availability == #limited and filterDeletedProducts(caller, product);
+      }
+    );
   };
 
   // Admin-only Query Functions
@@ -271,10 +338,134 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view contact form submissions");
     };
-    let list = List.empty<ContactFormSubmission>();
-    for (submission in contacts.values()) {
-      list.add(submission);
+    contacts.values().toArray();
+  };
+
+  public type SeedProductsResult = {
+    #seeded : { count : Nat };
+    #alreadySeeded;
+  };
+
+  // Seed Products (Admin-only, idempotent)
+  public shared ({ caller }) func seedProducts() : async SeedProductsResult {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can seed products");
     };
-    list.toArray();
+    seedProductsInternal();
+  };
+
+  func seedProductsInternal() : SeedProductsResult {
+    if (products.size() > 0) { return #alreadySeeded };
+
+    let now = Time.now();
+
+    // Lip Balm Product
+    let lipBalm : Product = {
+      id = 0;
+      name = "Lip Balm";
+      description = "Natural beeswax lip balm made from pure bee products. Moisturizes and protects your lips with a hint of honey flavor.";
+      category = #beeProducts;
+      price = { listPrice = 50.0; salePrice = null };
+      image = "/assets/images/products/lip-balm-1.webp";
+      availability = #inStock;
+      created = now;
+      timestamp = now;
+      variants = null;
+      stock = 100;
+      isDeleted = false;
+    };
+
+    // Beeswax Product
+    let beeswax : Product = {
+      id = 1;
+      name = "Beeswax";
+      description = "Pure, natural beeswax - perfect for crafting, cosmetics, and homemade candles. Sustainably sourced and lightly filtered for quality.";
+      category = #beeProducts;
+      price = { listPrice = 50.0; salePrice = null };
+      image = "/assets/images/products/beeswax.webp";
+      availability = #inStock;
+      created = now;
+      timestamp = now;
+      variants = null;
+      stock = 100;
+      isDeleted = false;
+    };
+
+    let naturalHoneyVariants : [WeightVariant] = [
+      {
+        weight = 250;
+        description = "250g jar of pure, natural honey - unprocessed and packed with flavor.";
+        price = { listPrice = 100.0; salePrice = ?80.0 };
+      },
+      {
+        weight = 500;
+        description = "500g jar of pure, natural honey - perfect for everyday use.";
+        price = { listPrice = 200.0; salePrice = ?150.0 };
+      },
+      {
+        weight = 1000;
+        description = "1kg jar of pure, natural honey - great value for honey lovers.";
+        price = { listPrice = 350.0; salePrice = ?275.0 };
+      }
+    ];
+
+    let naturalHoney : Product = {
+      id = 2;
+      name = "Natural Honey";
+      description = "Pure, unprocessed honey sourced directly from local beekeepers. Carefully harvested to maintain natural flavors and health benefits.";
+      category = #naturalHoney;
+      price = { listPrice = 100.0; salePrice = ?80.0 };
+      image = "/assets/images/products/natural-honey-1.webp";
+      availability = #inStock;
+      created = now;
+      timestamp = now;
+      variants = ?#weight(naturalHoneyVariants);
+      stock = 100;
+      isDeleted = false;
+    };
+
+    // Raw Honey Product with Flavor Variants
+    let rawHoneyVariants : [FlavorVariant] = [
+      {
+        flavor = "Raw Forest";
+        description = "1kg jar of raw forest honey - bold and complex flavors from wild forest blossoms.";
+        price = { listPrice = 350.0; salePrice = ?275.0 };
+        weight = 1000;
+      },
+      {
+        flavor = "Organic Wild";
+        description = "1kg jar of organic wild honey - captures the essence of summer flowers.";
+        price = { listPrice = 350.0; salePrice = ?275.0 };
+        weight = 1000;
+      },
+      {
+        flavor = "Herbal Infused";
+        description = "1kg jar of herbal infused honey - a unique blend of raw honey and natural herbs.";
+        price = { listPrice = 350.0; salePrice = ?275.0 };
+        weight = 1000;
+      }
+    ];
+
+    let rawHoney : Product = {
+      id = 3;
+      name = "Raw Honey";
+      description = "Unfiltered, unprocessed honey with naturally occurring flavors. Direct from the hive to your table.";
+      category = #rawHoney;
+      price = { listPrice = 350.0; salePrice = ?275.0 };
+      image = "/assets/images/products/raw-honey-1.webp";
+      availability = #inStock;
+      created = now;
+      timestamp = now;
+      variants = ?#flavor(rawHoneyVariants);
+      stock = 100;
+      isDeleted = false;
+    };
+
+    products.add(0, lipBalm);
+    products.add(1, beeswax);
+    products.add(2, naturalHoney);
+    products.add(3, rawHoney);
+
+    #seeded { count = 4 };
   };
 };

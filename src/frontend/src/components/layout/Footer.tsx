@@ -35,9 +35,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-serif font-bold text-primary mb-4">
-              Beemedha
-            </h3>
+            <div className="flex items-center space-x-3 mb-4">
+              <img 
+                src="/assets/image-1.png" 
+                alt="Beemedha logo" 
+                className="h-10 w-10 object-contain"
+              />
+              <h3 className="text-2xl font-serif font-bold text-primary">
+                Beemedha
+              </h3>
+            </div>
             <p className="text-sm text-muted-foreground mb-4">
               Pure honey, straight from nature. Committed to quality, purity, and sustainable beekeeping.
             </p>

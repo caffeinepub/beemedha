@@ -16,7 +16,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
         <div className="max-w-md mx-auto">
           <Alert>
             <LogIn className="h-4 w-4" />
-            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertTitle>Login Required</AlertTitle>
             <AlertDescription>
               Please log in to access the admin panel.
             </AlertDescription>

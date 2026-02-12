@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { Section, Container, BrandCard } from '../../components/brand/BrandPrimitives';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { Package, Newspaper, Users, Settings } from 'lucide-react';
+import { Package, Newspaper, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AdminDashboardPage() {
-  usePageMeta('Admin Dashboard', 'Manage your Beemedha products and content.');
+  usePageMeta('Web Owner Dashboard', 'Manage your Beemedha products and content.');
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default function AdminDashboardPage() {
         <Container>
           <div className="text-center space-y-4">
             <h1 className="text-5xl md:text-6xl font-serif font-bold">
-              Admin Dashboard
+              Web Owner Dashboard
             </h1>
             <p className="text-xl text-muted-foreground">
               Manage your products, news updates, and content.

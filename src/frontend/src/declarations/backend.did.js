@@ -14,15 +14,33 @@ export const UserRole = IDL.Variant({
   'guest' : IDL.Null,
 });
 export const Category = IDL.Variant({
-  'organicWild' : IDL.Null,
-  'rawForest' : IDL.Null,
-  'herbalInfused' : IDL.Null,
-  'honeyComb' : IDL.Null,
+  'beeProducts' : IDL.Null,
+  'rawHoney' : IDL.Null,
+  'naturalHoney' : IDL.Null,
+});
+export const Price = IDL.Record({
+  'salePrice' : IDL.Opt(IDL.Float64),
+  'listPrice' : IDL.Float64,
 });
 export const AvailabilityStatus = IDL.Variant({
   'inStock' : IDL.Null,
   'outOfStock' : IDL.Null,
   'limited' : IDL.Null,
+});
+export const WeightVariant = IDL.Record({
+  'weight' : IDL.Nat,
+  'description' : IDL.Text,
+  'price' : Price,
+});
+export const FlavorVariant = IDL.Record({
+  'weight' : IDL.Nat,
+  'flavor' : IDL.Text,
+  'description' : IDL.Text,
+  'price' : Price,
+});
+export const ProductVariants = IDL.Variant({
+  'weight' : IDL.Vec(WeightVariant),
+  'flavor' : IDL.Vec(FlavorVariant),
 });
 export const ProductUpdateType = IDL.Variant({
   'seasonalAvailability' : IDL.Null,
@@ -41,13 +59,16 @@ export const ProductUpdate = IDL.Record({
 export const Product = IDL.Record({
   'id' : IDL.Nat,
   'created' : Time,
+  'isDeleted' : IDL.Bool,
   'name' : IDL.Text,
   'description' : IDL.Text,
+  'variants' : IDL.Opt(ProductVariants),
   'availability' : AvailabilityStatus,
+  'stock' : IDL.Nat,
   'timestamp' : Time,
   'category' : Category,
-  'price' : IDL.Float64,
-  'images' : IDL.Vec(IDL.Text),
+  'image' : IDL.Text,
+  'price' : Price,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const ContactFormSubmission = IDL.Record({
@@ -56,6 +77,10 @@ export const ContactFormSubmission = IDL.Record({
   'email' : IDL.Text,
   'message' : IDL.Text,
   'timestamp' : Time,
+});
+export const SeedProductsResult = IDL.Variant({
+  'seeded' : IDL.Record({ 'count' : IDL.Nat }),
+  'alreadySeeded' : IDL.Null,
 });
 
 export const idlService = IDL.Service({
@@ -66,9 +91,11 @@ export const idlService = IDL.Service({
         IDL.Text,
         IDL.Text,
         Category,
-        IDL.Float64,
-        IDL.Vec(IDL.Text),
+        Price,
+        IDL.Text,
         AvailabilityStatus,
+        IDL.Opt(ProductVariants),
+        IDL.Nat,
       ],
       [IDL.Nat],
       [],
@@ -89,6 +116,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(ContactFormSubmission)],
       ['query'],
     ),
+  'getLimitedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
   'getProductUpdatesByProduct' : IDL.Func(
       [IDL.Nat],
@@ -108,6 +136,7 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'seedProducts' : IDL.Func([], [SeedProductsResult], []),
   'submitContactForm' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
   'updateProduct' : IDL.Func(
       [
@@ -115,9 +144,11 @@ export const idlService = IDL.Service({
         IDL.Text,
         IDL.Text,
         Category,
-        IDL.Float64,
-        IDL.Vec(IDL.Text),
+        Price,
+        IDL.Text,
         AvailabilityStatus,
+        IDL.Opt(ProductVariants),
+        IDL.Nat,
       ],
       [],
       [],
@@ -133,15 +164,33 @@ export const idlFactory = ({ IDL }) => {
     'guest' : IDL.Null,
   });
   const Category = IDL.Variant({
-    'organicWild' : IDL.Null,
-    'rawForest' : IDL.Null,
-    'herbalInfused' : IDL.Null,
-    'honeyComb' : IDL.Null,
+    'beeProducts' : IDL.Null,
+    'rawHoney' : IDL.Null,
+    'naturalHoney' : IDL.Null,
+  });
+  const Price = IDL.Record({
+    'salePrice' : IDL.Opt(IDL.Float64),
+    'listPrice' : IDL.Float64,
   });
   const AvailabilityStatus = IDL.Variant({
     'inStock' : IDL.Null,
     'outOfStock' : IDL.Null,
     'limited' : IDL.Null,
+  });
+  const WeightVariant = IDL.Record({
+    'weight' : IDL.Nat,
+    'description' : IDL.Text,
+    'price' : Price,
+  });
+  const FlavorVariant = IDL.Record({
+    'weight' : IDL.Nat,
+    'flavor' : IDL.Text,
+    'description' : IDL.Text,
+    'price' : Price,
+  });
+  const ProductVariants = IDL.Variant({
+    'weight' : IDL.Vec(WeightVariant),
+    'flavor' : IDL.Vec(FlavorVariant),
   });
   const ProductUpdateType = IDL.Variant({
     'seasonalAvailability' : IDL.Null,
@@ -160,13 +209,16 @@ export const idlFactory = ({ IDL }) => {
   const Product = IDL.Record({
     'id' : IDL.Nat,
     'created' : Time,
+    'isDeleted' : IDL.Bool,
     'name' : IDL.Text,
     'description' : IDL.Text,
+    'variants' : IDL.Opt(ProductVariants),
     'availability' : AvailabilityStatus,
+    'stock' : IDL.Nat,
     'timestamp' : Time,
     'category' : Category,
-    'price' : IDL.Float64,
-    'images' : IDL.Vec(IDL.Text),
+    'image' : IDL.Text,
+    'price' : Price,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const ContactFormSubmission = IDL.Record({
@@ -175,6 +227,10 @@ export const idlFactory = ({ IDL }) => {
     'email' : IDL.Text,
     'message' : IDL.Text,
     'timestamp' : Time,
+  });
+  const SeedProductsResult = IDL.Variant({
+    'seeded' : IDL.Record({ 'count' : IDL.Nat }),
+    'alreadySeeded' : IDL.Null,
   });
   
   return IDL.Service({
@@ -185,9 +241,11 @@ export const idlFactory = ({ IDL }) => {
           IDL.Text,
           IDL.Text,
           Category,
-          IDL.Float64,
-          IDL.Vec(IDL.Text),
+          Price,
+          IDL.Text,
           AvailabilityStatus,
+          IDL.Opt(ProductVariants),
+          IDL.Nat,
         ],
         [IDL.Nat],
         [],
@@ -208,6 +266,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ContactFormSubmission)],
         ['query'],
       ),
+    'getLimitedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
     'getProductUpdatesByProduct' : IDL.Func(
         [IDL.Nat],
@@ -231,6 +290,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'seedProducts' : IDL.Func([], [SeedProductsResult], []),
     'submitContactForm' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text],
         [IDL.Nat],
@@ -242,9 +302,11 @@ export const idlFactory = ({ IDL }) => {
           IDL.Text,
           IDL.Text,
           Category,
-          IDL.Float64,
-          IDL.Vec(IDL.Text),
+          Price,
+          IDL.Text,
           AvailabilityStatus,
+          IDL.Opt(ProductVariants),
+          IDL.Nat,
         ],
         [],
         [],

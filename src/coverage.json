@@ -1,391 +1,128 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T05:33:20.281Z",
+  "generatedAt": "2026-02-12T12:03:12.586Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 17,
-    "implemented": 14,
+    "total": 8,
+    "implemented": 6,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement a consistent premium, organic Beemedha visual theme across the site: warm honey-gold/deep amber/natural brown/soft cream with green accents, elegant serif headings + clean sans-serif body text, ample white space, nature-inspired styling, and reusable layout primitives (header, section wrappers, cards, badges, buttons).",
+        "summary": "Add a dedicated Web Owner admin dashboard entry route at \"/owner\" (or make \"/owner\" an alias to the existing \"/admin\" dashboard) and ensure the page title (H1) and document title are \"Web Owner Dashboard\".",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/index.css",
-          "frontend/index.css",
-          "frontend/tailwind.config.js",
-          "frontend/src/components/brand/BrandPrimitives.tsx",
-          "frontend/src/components/layout/SiteLayout.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/index.css",
-          "frontend/index.css",
-          "frontend/tailwind.config.js",
-          "frontend/src/components/brand/BrandPrimitives.tsx",
-          "frontend/src/components/layout/SiteLayout.tsx"
-        ]
-      },
-      {
-        "id": "REQ-10",
-        "summary": "Create the Certifications & Quality Assurance page with sections for lab testing details, organic certifications, and quality seals/trust badges, using premium badge visuals and clean content hierarchy.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/CertificationsPage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/CertificationsPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-11",
-        "summary": "Build the Contact Us page with: a contact form (name, email/phone, message), a WhatsApp chat button (link-based), displayed email & phone details, and an embedded Google Maps location (iframe embed or map link).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/ContactPage.tsx",
-          "frontend/src/hooks/useContactForm.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/ContactPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-12",
-        "summary": "Implement backend handling for contact form submissions (store submissions with timestamp; provide an admin-only listing view in the admin panel).",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-13",
-        "summary": "Implement a global Footer containing: social media links, newsletter signup, and links to Privacy Policy and Terms & Conditions.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/PrivacyPolicyPage.tsx",
-          "frontend/src/pages/TermsPage.tsx",
-          "frontend/src/components/layout/Footer.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/PrivacyPolicyPage.tsx",
-          "frontend/src/pages/TermsPage.tsx",
-          "frontend/src/components/layout/Footer.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-14",
-        "summary": "Create an Admin panel UI for managing live updates, including CRUD for products (including stock status, price, images, categories) and news items; restrict access to authenticated admins using Internet Identity.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/admin/AdminRouteGuard.tsx",
-          "frontend/src/components/auth/LoginButton.tsx",
+          "frontend/src/App.tsx",
           "frontend/src/pages/admin/AdminDashboardPage.tsx",
-          "frontend/src/pages/admin/AdminProductsPage.tsx",
-          "frontend/src/pages/admin/AdminNewsPage.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/hooks/usePageMeta.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/AdminRouteGuard.tsx",
-          "frontend/src/components/auth/LoginButton.tsx",
+          "frontend/src/App.tsx",
           "frontend/src/pages/admin/AdminDashboardPage.tsx",
-          "frontend/src/pages/admin/AdminProductsPage.tsx",
-          "frontend/src/pages/admin/AdminNewsPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-15",
-        "summary": "Implement “live updates” behavior on the frontend using React Query (polling and/or refetch-on-focus) so product availability/pricing and news updates refresh without manual page redesign; provide a visible “Last updated” timestamp on relevant pages.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useLiveUpdateConfig.ts",
-          "frontend/src/pages/ProductsPage.tsx",
-          "frontend/src/pages/NewsPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useLiveUpdateConfig.ts",
-          "frontend/src/pages/ProductsPage.tsx",
-          "frontend/src/pages/NewsPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-16",
-        "summary": "Ensure technical quality: fully responsive layouts (mobile/tablet/desktop), fast-loading pages (optimize images and avoid unnecessary heavy assets), and SEO-optimized structure (semantic headings, per-page titles/meta descriptions, accessible navigation).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/usePageMeta.ts",
-          "frontend/index.html",
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/pages/ProductsPage.tsx",
-          "frontend/src/components/layout/Header.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/usePageMeta.ts",
-          "frontend/index.html",
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/pages/ProductsPage.tsx",
-          "frontend/src/components/layout/Header.tsx"
-        ]
-      },
-      {
-        "id": "REQ-17",
-        "summary": "Prepare the product purchase flow UI to be “secure checkout ready” for future e-commerce expansion by adding non-functional placeholders (e.g., “Add to Cart” and “Checkout coming soon”) without implementing payments or external integrations.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/products/PurchasePlaceholder.tsx",
-          "frontend/src/pages/ProductDetailPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/products/PurchasePlaceholder.tsx",
-          "frontend/src/pages/ProductDetailPage.tsx"
+          "frontend/src/hooks/usePageMeta.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Create the main site navigation and routing for required pages: Home, About Beemedha, Products (listing), Product Detail, Live Updates/News, Certifications & Quality Assurance, Contact Us, plus Privacy Policy, Terms & Conditions.",
+        "summary": "Enforce access control for the Web Owner dashboard and product management pages using Internet Identity authentication and admin verification via the existing useIsCallerAdmin() hook; unauthenticated users must see \"Login Required\" and non-admin users must see \"Access Denied\".",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/Header.tsx",
-          "frontend/src/components/layout/Footer.tsx"
+          "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/Header.tsx",
-          "frontend/src/components/layout/Footer.tsx"
+          "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Build the Home page with: hero section featuring tagline “Pure Honey, Straight from Nature”, high-quality honey/beehive visuals, primary CTAs (“Shop Now”, “Explore Our Honey”), and a trust highlight section for “100% Natural”, “No Adulteration”, “Lab Tested”.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Build the About Beemedha page describing Beemedha’s story and commitment to purity, ethical beekeeping practices, and sustainable harvesting methods, using clear sections and supportive visuals.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/AboutPage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/AboutPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Implement backend data models and APIs to support live product updates: products with category, name, images, description, nutritional values, harvest location, benefits, price, and availability status (In Stock / Limited / Out of Stock), plus timestamps for updates/new arrivals.",
+        "summary": "Update the backend product data model and CRUD to support admin-only product management with the required fields: id, name, category, image (stored as a single primary image string or first element of images), price, discountPrice (optional), variants[] (optional), stock quantity, createdAt, and soft delete.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-6",
-        "summary": "Build the Products listing page that displays product cards with image, name, price, and availability status, supports browsing by the specified categories (Raw Forest Honey, Organic Wild Honey, Herbal Infused Honey, Honey Comb), and reflects live updates from the backend.",
+        "id": "REQ-4",
+        "summary": "Implement a conditional Motoko state migration to safely upgrade existing stored products to the new product schema (e.g., initialize stock to a default and deleted to false for existing products) without losing existing data.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Revise the admin product management UI to match the requested dashboard/table layout: show product list in a responsive table with columns Image, Product Name, Category, Price, Discount, Stock, Actions (Edit/Delete), and an \"Add Product\" button at the top.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useLiveUpdateConfig.ts",
-          "frontend/src/hooks/useProducts.ts",
-          "frontend/src/pages/ProductsPage.tsx",
-          "frontend/src/components/products/ProductCard.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/index.css"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useLiveUpdateConfig.ts",
-          "frontend/src/pages/ProductsPage.tsx",
-          "frontend/src/components/products/ProductCard.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/admin/AdminProductsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Implement Add/Edit product workflows using a modal form with validation and loading states, supporting fields: Product Name, Category dropdown (Bee Products, Natural Honey, Raw Honey), JPEG image upload, Price, Discount Price (optional), Stock Quantity, and Variant Options (optional: weight variants 250g/500g/1000g; type variants such as \"MULTIFLORA\" / \"Raw & Unprocessed\" etc.).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-7",
-        "summary": "Build the Product Detail page showing: detailed description, nutritional values, harvest location, benefits, and customer reviews; display current price and availability from the backend.",
+        "summary": "Replace product deletion with a confirmation popup and perform a soft delete (preferred) through secure admin-only backend calls; ensure non-admin users cannot modify products and surface errors via toast notifications.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useProductDetail.ts",
-          "frontend/src/pages/ProductDetailPage.tsx",
-          "frontend/src/components/products/PurchasePlaceholder.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/src/components/admin/AdminRouteGuard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/ProductDetailPage.tsx",
-          "frontend/src/components/products/PurchasePlaceholder.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/src/components/admin/AdminRouteGuard.tsx"
         ]
       },
       {
         "id": "REQ-8",
-        "summary": "Implement backend data models and APIs for a Live Updates/News feed supporting: new harvest announcements, seasonal availability, price updates, and limited-time offers, with publish dates and optional product references.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-9",
-        "summary": "Build the Live Updates / News page that lists announcements/updates from the backend with clear date display, filtering by update type, and a detail view/expanded reading experience.",
+        "summary": "Add admin product list enhancements (bonus): search by product name/text, filter by category, show total product count, and display a low-stock alert indicator based on a configurable threshold.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useNews.ts",
-          "frontend/src/pages/NewsPage.tsx",
-          "frontend/src/pages/NewsDetailPage.tsx",
-          "frontend/src/components/news/NewsCard.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/admin/AdminProductsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/NewsPage.tsx",
-          "frontend/src/pages/NewsDetailPage.tsx",
-          "frontend/src/components/news/NewsCard.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/admin/AdminProductsPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/authorization/MixinAuthorization.mo",
-    "backend/authorization/access-control.mo",
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
-    "build-template/Dockerfile",
-    "build-template/LICENSE",
-    "build-template/README.md",
-    "build-template/deploy.sh",
-    "build-template/icp.yaml",
-    "build-template/package.json",
-    "build-template/pnpm-lock.yaml",
-    "build-template/pnpm-workspace.yaml",
-    "build-template/scripts/prune-unused-images.js",
-    "build-template/scripts/resize-images.js",
-    "build-template/src/backend/canister.yaml",
-    "build-template/src/backend/system-idl/aaaaa-aa.did",
-    "build-template/src/frontend/canister.yaml",
-    "build-template/src/frontend/components.json",
-    "build-template/src/frontend/env.json",
-    "build-template/src/frontend/eslint-rules/no-bigint-in-query-keys.js",
-    "build-template/src/frontend/eslint-rules/require-internet-identity-provider.js",
-    "build-template/src/frontend/eslint.config.js",
-    "build-template/src/frontend/package.json",
-    "build-template/src/frontend/postcss.config.js",
-    "build-template/src/frontend/src/components/ui/accordion.tsx",
-    "build-template/src/frontend/src/components/ui/alert-dialog.tsx",
-    "build-template/src/frontend/src/components/ui/alert.tsx",
-    "build-template/src/frontend/src/components/ui/aspect-ratio.tsx",
-    "build-template/src/frontend/src/components/ui/avatar.tsx",
-    "build-template/src/frontend/src/components/ui/badge.tsx",
-    "build-template/src/frontend/src/components/ui/breadcrumb.tsx",
-    "build-template/src/frontend/src/components/ui/button.tsx",
-    "build-template/src/frontend/src/components/ui/calendar.tsx",
-    "build-template/src/frontend/src/components/ui/card.tsx",
-    "build-template/src/frontend/src/components/ui/carousel.tsx",
-    "build-template/src/frontend/src/components/ui/chart.tsx",
-    "build-template/src/frontend/src/components/ui/checkbox.tsx",
-    "build-template/src/frontend/src/components/ui/collapsible.tsx",
-    "build-template/src/frontend/src/components/ui/command.tsx",
-    "build-template/src/frontend/src/components/ui/context-menu.tsx",
-    "build-template/src/frontend/src/components/ui/dialog.tsx",
-    "build-template/src/frontend/src/components/ui/drawer.tsx",
-    "build-template/src/frontend/src/components/ui/dropdown-menu.tsx",
-    "build-template/src/frontend/src/components/ui/form.tsx",
-    "build-template/src/frontend/src/components/ui/hover-card.tsx",
-    "build-template/src/frontend/src/components/ui/input-otp.tsx",
-    "build-template/src/frontend/src/components/ui/input.tsx",
-    "build-template/src/frontend/src/components/ui/label.tsx",
-    "build-template/src/frontend/src/components/ui/menubar.tsx",
-    "build-template/src/frontend/src/components/ui/navigation-menu.tsx",
-    "build-template/src/frontend/src/components/ui/pagination.tsx",
-    "build-template/src/frontend/src/components/ui/popover.tsx",
-    "build-template/src/frontend/src/components/ui/progress.tsx",
-    "build-template/src/frontend/src/components/ui/radio-group.tsx",
-    "build-template/src/frontend/src/components/ui/resizable.tsx",
-    "build-template/src/frontend/src/components/ui/scroll-area.tsx",
-    "build-template/src/frontend/src/components/ui/select.tsx",
-    "build-template/src/frontend/src/components/ui/separator.tsx",
-    "build-template/src/frontend/src/components/ui/sheet.tsx",
-    "build-template/src/frontend/src/components/ui/sidebar.tsx",
-    "build-template/src/frontend/src/components/ui/skeleton.tsx",
-    "build-template/src/frontend/src/components/ui/slider.tsx",
-    "build-template/src/frontend/src/components/ui/sonner.tsx",
-    "build-template/src/frontend/src/components/ui/switch.tsx",
-    "build-template/src/frontend/src/components/ui/table.tsx",
-    "build-template/src/frontend/src/components/ui/tabs.tsx",
-    "build-template/src/frontend/src/components/ui/textarea.tsx",
-    "build-template/src/frontend/src/components/ui/toggle-group.tsx",
-    "build-template/src/frontend/src/components/ui/toggle.tsx",
-    "build-template/src/frontend/src/components/ui/tooltip.tsx",
-    "build-template/src/frontend/src/hooks/use-mobile.tsx",
-    "build-template/src/frontend/src/lib/utils.ts",
-    "build-template/src/frontend/tsconfig.json",
-    "build-template/src/frontend/vite.config.js",
-    "build-template/tsconfig.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/index.css",
-    "frontend/index.html",
-    "frontend/public/assets/generated/beemedha-badges.dim_512x512.png",
-    "frontend/public/assets/generated/beemedha-hero.dim_1920x1080.png",
-    "frontend/public/assets/generated/herbal-infused-honey.dim_800x800.png",
-    "frontend/public/assets/generated/honey-comb.dim_800x800.png",
-    "frontend/public/assets/generated/honeycomb-bg.dim_1600x900.png",
-    "frontend/public/assets/generated/organic-wild-honey.dim_800x800.png",
-    "frontend/public/assets/generated/quality-seal.dim_512x512.png",
-    "frontend/public/assets/generated/raw-forest-honey.dim_800x800.png",
     "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
     "frontend/src/components/admin/AdminRouteGuard.tsx",
-    "frontend/src/components/auth/LoginButton.tsx",
-    "frontend/src/components/brand/BrandPrimitives.tsx",
-    "frontend/src/components/layout/Footer.tsx",
-    "frontend/src/components/layout/Header.tsx",
-    "frontend/src/components/layout/SiteLayout.tsx",
-    "frontend/src/components/news/NewsCard.tsx",
     "frontend/src/components/products/ProductCard.tsx",
-    "frontend/src/components/products/PurchasePlaceholder.tsx",
-    "frontend/src/config.ts",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useActor.ts",
-    "frontend/src/hooks/useInternetIdentity.ts",
-    "frontend/src/hooks/useLiveUpdateConfig.ts",
     "frontend/src/hooks/usePageMeta.ts",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/index.css",
-    "frontend/src/main.tsx",
-    "frontend/src/pages/AboutPage.tsx",
-    "frontend/src/pages/CertificationsPage.tsx",
-    "frontend/src/pages/ContactPage.tsx",
-    "frontend/src/pages/HomePage.tsx",
     "frontend/src/pages/NewsDetailPage.tsx",
-    "frontend/src/pages/NewsPage.tsx",
-    "frontend/src/pages/PrivacyPolicyPage.tsx",
     "frontend/src/pages/ProductDetailPage.tsx",
-    "frontend/src/pages/ProductsPage.tsx",
-    "frontend/src/pages/TermsPage.tsx",
     "frontend/src/pages/admin/AdminDashboardPage.tsx",
-    "frontend/src/pages/admin/AdminNewsPage.tsx",
     "frontend/src/pages/admin/AdminProductsPage.tsx",
-    "frontend/src/ui-summary.json",
-    "frontend/src/utils/StorageClient.ts",
-    "frontend/src/utils/urlParams.ts",
-    "frontend/tailwind.config.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

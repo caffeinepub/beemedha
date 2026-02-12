@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile } from '../backend';
+import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants } from '../backend';
 import { useLiveUpdateConfig } from './useLiveUpdateConfig';
 
 // Products
@@ -61,9 +61,11 @@ export function useCreateProduct() {
       name: string;
       description: string;
       category: Category;
-      price: number;
-      images: string[];
+      price: Price;
+      image: string;
       availability: AvailabilityStatus;
+      variants: ProductVariants | null;
+      stock: bigint;
     }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.createProduct(
@@ -71,8 +73,10 @@ export function useCreateProduct() {
         data.description,
         data.category,
         data.price,
-        data.images,
-        data.availability
+        data.image,
+        data.availability,
+        data.variants,
+        data.stock
       );
     },
     onSuccess: () => {
@@ -91,9 +95,11 @@ export function useUpdateProduct() {
       name: string;
       description: string;
       category: Category;
-      price: number;
-      images: string[];
+      price: Price;
+      image: string;
       availability: AvailabilityStatus;
+      variants: ProductVariants | null;
+      stock: bigint;
     }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateProduct(
@@ -102,8 +108,10 @@ export function useUpdateProduct() {
         data.description,
         data.category,
         data.price,
-        data.images,
-        data.availability
+        data.image,
+        data.availability,
+        data.variants,
+        data.stock
       );
     },
     onSuccess: () => {
@@ -124,6 +132,23 @@ export function useDeleteProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useSeedProducts() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.seedProducts();
+    },
+    onSuccess: async () => {
+      // Invalidate all product-related queries to ensure immediate UI update
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      await queryClient.refetchQueries({ queryKey: ['products'] });
     },
   });
 }

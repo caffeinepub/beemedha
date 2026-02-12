@@ -1,126 +1,60 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build a modern, premium, professional website for Beemedha (natural honey & bee products) focused on online sales, trust-building, and live product/news updates, with responsive, fast, SEO-friendly structure and an admin panel for managing updates.",
+  "summary": "Honey e-commerce website with a secure Web Owner (admin) dashboard using Internet Identity for authentication and admin-only product management (add/edit/delete) with variant support.",
   "architectural_notes": [
-    "Plan for live product availability/pricing updates and news updates backed by an admin-managed data source (admin panel/CMS).",
-    "Checkout should be architected as future-ready (secure e-commerce expansion) even if not launched initially.",
-    "SEO-friendly structure and performance (fast loading) are core non-functional requirements.",
-    "Mobile-first responsive design for mobile/tablet/desktop."
+    "Use Internet Identity authentication in React + TypeScript; gate admin routes using useIsCallerAdmin() and show explicit UI states for unauthenticated/non-admin users.",
+    "Admin product modifications must be enforced server-side (secure API calls); non-admin users must not be able to add/edit/delete via direct requests.",
+    "Products persisted in backend database/canister with support for variants (weight/type) and soft delete."
   ],
   "known_issues": [],
   "isFixRequest": false,
-  "imageRequirements": "## Required Images\n- Premium honey jar + honey dipper hero illustration/photo-style graphic (beemedha-hero.dim_1920x1080.png)\n- Honeycomb texture background (subtle, light) (honeycomb-bg.dim_1600x900.png)\n- Bee + leaf organic badge icon set (4 icons) (beemedha-badges.dim_512x512.png)\n- Quality seal / lab-tested stamp badge (quality-seal.dim_512x512.png)\n- Product placeholder pack for 4 categories (raw-forest-honey.dim_800x800.png)\n- Product placeholder pack for 4 categories (organic-wild-honey.dim_800x800.png)\n- Product placeholder pack for 4 categories (herbal-infused-honey.dim_800x800.png)\n- Product placeholder pack for 4 categories (honey-comb.dim_800x800.png)",
   "existing_features": [
     {
-      "id": "feature-implement-a-consistent-premium-organic-beemedha-visual-theme-across-the-site-warm-honey-gold-deep-amber-natural-brown-soft-cream-with-green-accents-elegant-serif-headings-clean-sans-serif-body-text-ample-white-space-nature-inspired-styling-and-reusable-layout-primitives-header-section-wrappers-cards-badges-buttons",
-      "title": "Implement a consistent premium, organic Beemedha visual theme across the site: warm honey-gold/deep amber/natural brown/soft cream with green accents, elegant serif headings + clean sans-serif body text, ample white space, nature-inspired styling, and reusable layout primitives (header, section wrappers, cards, badges, buttons).",
+      "id": "feature-add-a-dedicated-web-owner-admin-dashboard-entry-route-at-owner-or-make-owner-an-alias-to-the-existing-admin-dashboard-and-ensure-the-page-title-h1-and-document-title-are-web-owner-dashboard",
+      "title": "Add a dedicated Web Owner admin dashboard entry route at \"/owner\" (or make \"/owner\" an alias to the existing \"/admin\" dashboard) and ensure the page title (H1) and document title are \"Web Owner Dashboard\".",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-create-the-main-site-navigation-and-routing-for-required-pages-home-about-beemedha-products-listing-product-detail-live-updates-news-certifications-quality-assurance-contact-us-plus-privacy-policy-terms-conditions",
-      "title": "Create the main site navigation and routing for required pages: Home, About Beemedha, Products (listing), Product Detail, Live Updates/News, Certifications & Quality Assurance, Contact Us, plus Privacy Policy, Terms & Conditions.",
+      "id": "feature-enforce-access-control-for-the-web-owner-dashboard-and-product-management-pages-using-internet-identity-authentication-and-admin-verification-via-the-existing-useiscalleradmin-hook-unauthenticated-users-must-see-login-required-and-non-admin-users-must-see-access-denied",
+      "title": "Enforce access control for the Web Owner dashboard and product management pages using Internet Identity authentication and admin verification via the existing useIsCallerAdmin() hook; unauthenticated users must see \"Login Required\" and non-admin users must see \"Access Denied\".",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-the-home-page-with-hero-section-featuring-tagline-pure-honey-straight-from-nature-high-quality-honey-beehive-visuals-primary-ctas-shop-now-explore-our-honey-and-a-trust-highlight-section-for-100-natural-no-adulteration-lab-tested",
-      "title": "Build the Home page with: hero section featuring tagline “Pure Honey, Straight from Nature”, high-quality honey/beehive visuals, primary CTAs (“Shop Now”, “Explore Our Honey”), and a trust highlight section for “100% Natural”, “No Adulteration”, “Lab Tested”.",
+      "id": "feature-revise-the-admin-product-management-ui-to-match-the-requested-dashboard-table-layout-show-product-list-in-a-responsive-table-with-columns-image-product-name-category-price-discount-stock-actions-edit-delete-and-an-add-product-button-at-the-top",
+      "title": "Revise the admin product management UI to match the requested dashboard/table layout: show product list in a responsive table with columns Image, Product Name, Category, Price, Discount, Stock, Actions (Edit/Delete), and an \"Add Product\" button at the top.",
       "reqIds": [
-        "REQ-3"
+        "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-the-about-beemedha-page-describing-beemedha-s-story-and-commitment-to-purity-ethical-beekeeping-practices-and-sustainable-harvesting-methods-using-clear-sections-and-supportive-visuals",
-      "title": "Build the About Beemedha page describing Beemedha’s story and commitment to purity, ethical beekeeping practices, and sustainable harvesting methods, using clear sections and supportive visuals.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-build-the-products-listing-page-that-displays-product-cards-with-image-name-price-and-availability-status-supports-browsing-by-the-specified-categories-raw-forest-honey-organic-wild-honey-herbal-infused-honey-honey-comb-and-reflects-live-updates-from-the-backend",
-      "title": "Build the Products listing page that displays product cards with image, name, price, and availability status, supports browsing by the specified categories (Raw Forest Honey, Organic Wild Honey, Herbal Infused Honey, Honey Comb), and reflects live updates from the backend.",
+      "id": "feature-implement-add-edit-product-workflows-using-a-modal-form-with-validation-and-loading-states-supporting-fields-product-name-category-dropdown-bee-products-natural-honey-raw-honey-jpeg-image-upload-price-discount-price-optional-stock-quantity-and-variant-options-optional-weight-variants-250g-500g-1000g-type-variants-such-as-multiflora-raw-unprocessed-etc",
+      "title": "Implement Add/Edit product workflows using a modal form with validation and loading states, supporting fields: Product Name, Category dropdown (Bee Products, Natural Honey, Raw Honey), JPEG image upload, Price, Discount Price (optional), Stock Quantity, and Variant Options (optional: weight variants 250g/500g/1000g; type variants such as \"MULTIFLORA\" / \"Raw & Unprocessed\" etc.).",
       "reqIds": [
         "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-the-product-detail-page-showing-detailed-description-nutritional-values-harvest-location-benefits-and-customer-reviews-display-current-price-and-availability-from-the-backend",
-      "title": "Build the Product Detail page showing: detailed description, nutritional values, harvest location, benefits, and customer reviews; display current price and availability from the backend.",
+      "id": "feature-replace-product-deletion-with-a-confirmation-popup-and-perform-a-soft-delete-preferred-through-secure-admin-only-backend-calls-ensure-non-admin-users-cannot-modify-products-and-surface-errors-via-toast-notifications",
+      "title": "Replace product deletion with a confirmation popup and perform a soft delete (preferred) through secure admin-only backend calls; ensure non-admin users cannot modify products and surface errors via toast notifications.",
       "reqIds": [
         "REQ-7"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-the-live-updates-news-page-that-lists-announcements-updates-from-the-backend-with-clear-date-display-filtering-by-update-type-and-a-detail-view-expanded-reading-experience",
-      "title": "Build the Live Updates / News page that lists announcements/updates from the backend with clear date display, filtering by update type, and a detail view/expanded reading experience.",
+      "id": "feature-add-admin-product-list-enhancements-bonus-search-by-product-name-text-filter-by-category-show-total-product-count-and-display-a-low-stock-alert-indicator-based-on-a-configurable-threshold",
+      "title": "Add admin product list enhancements (bonus): search by product name/text, filter by category, show total product count, and display a low-stock alert indicator based on a configurable threshold.",
       "reqIds": [
-        "REQ-9"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-the-certifications-quality-assurance-page-with-sections-for-lab-testing-details-organic-certifications-and-quality-seals-trust-badges-using-premium-badge-visuals-and-clean-content-hierarchy",
-      "title": "Create the Certifications & Quality Assurance page with sections for lab testing details, organic certifications, and quality seals/trust badges, using premium badge visuals and clean content hierarchy.",
-      "reqIds": [
-        "REQ-10"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-build-the-contact-us-page-with-a-contact-form-name-email-phone-message-a-whatsapp-chat-button-link-based-displayed-email-phone-details-and-an-embedded-google-maps-location-iframe-embed-or-map-link",
-      "title": "Build the Contact Us page with: a contact form (name, email/phone, message), a WhatsApp chat button (link-based), displayed email & phone details, and an embedded Google Maps location (iframe embed or map link).",
-      "reqIds": [
-        "REQ-11"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-a-global-footer-containing-social-media-links-newsletter-signup-and-links-to-privacy-policy-and-terms-conditions",
-      "title": "Implement a global Footer containing: social media links, newsletter signup, and links to Privacy Policy and Terms & Conditions.",
-      "reqIds": [
-        "REQ-13"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-an-admin-panel-ui-for-managing-live-updates-including-crud-for-products-including-stock-status-price-images-categories-and-news-items-restrict-access-to-authenticated-admins-using-internet-identity",
-      "title": "Create an Admin panel UI for managing live updates, including CRUD for products (including stock status, price, images, categories) and news items; restrict access to authenticated admins using Internet Identity.",
-      "reqIds": [
-        "REQ-14"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-live-updates-behavior-on-the-frontend-using-react-query-polling-and-or-refetch-on-focus-so-product-availability-pricing-and-news-updates-refresh-without-manual-page-redesign-provide-a-visible-last-updated-timestamp-on-relevant-pages",
-      "title": "Implement “live updates” behavior on the frontend using React Query (polling and/or refetch-on-focus) so product availability/pricing and news updates refresh without manual page redesign; provide a visible “Last updated” timestamp on relevant pages.",
-      "reqIds": [
-        "REQ-15"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-technical-quality-fully-responsive-layouts-mobile-tablet-desktop-fast-loading-pages-optimize-images-and-avoid-unnecessary-heavy-assets-and-seo-optimized-structure-semantic-headings-per-page-titles-meta-descriptions-accessible-navigation",
-      "title": "Ensure technical quality: fully responsive layouts (mobile/tablet/desktop), fast-loading pages (optimize images and avoid unnecessary heavy assets), and SEO-optimized structure (semantic headings, per-page titles/meta descriptions, accessible navigation).",
-      "reqIds": [
-        "REQ-16"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-prepare-the-product-purchase-flow-ui-to-be-secure-checkout-ready-for-future-e-commerce-expansion-by-adding-non-functional-placeholders-e-g-add-to-cart-and-checkout-coming-soon-without-implementing-payments-or-external-integrations",
-      "title": "Prepare the product purchase flow UI to be “secure checkout ready” for future e-commerce expansion by adding non-functional placeholders (e.g., “Add to Cart” and “Checkout coming soon”) without implementing payments or external integrations.",
-      "reqIds": [
-        "REQ-17"
+        "REQ-8"
       ],
       "version": 1
     }
@@ -128,97 +62,53 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Define Beemedha brand identity in UI (premium organic tone, honey-gold/amber/brown/cream with green accents; serif headings + sans body)",
+      "summary": "Create Web Owner admin dashboard route (/owner or /admin) titled \"Web Owner Dashboard\" with Internet Identity auth + admin gating via useIsCallerAdmin(), showing Login Required / Access Denied states",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Home page with hero tagline, high-quality visuals, CTAs, and trust highlights (100% Natural/No Adulteration/Lab Tested)",
+      "summary": "Implement admin-only product management: add/edit/remove products with soft delete + confirmation dialog, secure API calls preventing non-admin modifications",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "About Beemedha page (brand story, ethical beekeeping, sustainable harvesting)",
+      "summary": "Build admin UI: responsive dashboard layout with product table (Image, Name, Category, Price, Discount, Stock, Actions), Add Product button, modal add/edit forms, validation, loading states, success/error toasts",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Products listing page with live updates (price + availability) and categories (Raw Forest/Organic Wild/Herbal Infused/Honey Comb)",
+      "summary": "Define product data model supporting single-price and variant-based products (weight/type variants), fields: id, name, category, image (JPEG only), price, discountPrice, variants[], stock, createdAt; persist to database/backend",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-5",
-      "summary": "Product detail page (description, nutritional values, harvest location, benefits, customer reviews)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Live Updates / News section (new harvest announcements, seasonal availability, price updates, limited-time offers)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Certifications & Quality Assurance page/section (lab testing details, organic certifications, quality seals/badges)",
+      "summary": "Optional admin enhancements: search products, filter by category, show total product count, low stock alert",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-8",
-      "summary": "Contact page (contact form, WhatsApp button, email/phone, Google Maps)",
-      "reqIds": [],
+      "summary": "Update the backend product data model and CRUD to support admin-only product management with the required fields: id, name, category, image (stored as a single primary image string or first element of images), price, discountPrice (optional), variants[] (optional), stock quantity, createdAt, and soft delete.",
+      "reqIds": [
+        "REQ-3"
+      ],
       "status": "pending"
     },
     {
       "id": "AR-9",
-      "summary": "Global footer (social links, newsletter signup, Privacy Policy, Terms & Conditions)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "Technical requirements: fully responsive, fast loading, SEO-optimized structure, and secure checkout-ready architecture for future e-commerce expansion",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-11",
-      "summary": "Admin panel/CMS for managing live product updates (stock, pricing, new arrivals) and news updates",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-16",
-      "summary": "Implement backend data models and APIs to support live product updates: products with category, name, images, description, nutritional values, harvest location, benefits, price, and availability status (In Stock / Limited / Out of Stock), plus timestamps for updates/new arrivals.",
+      "summary": "Implement a conditional Motoko state migration to safely upgrade existing stored products to the new product schema (e.g., initialize stock to a default and deleted to false for existing products) without losing existing data.",
       "reqIds": [
-        "REQ-5"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-19",
-      "summary": "Implement backend data models and APIs for a Live Updates/News feed supporting: new harvest announcements, seasonal availability, price updates, and limited-time offers, with publish dates and optional product references.",
-      "reqIds": [
-        "REQ-8"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-23",
-      "summary": "Implement backend handling for contact form submissions (store submissions with timestamp; provide an admin-only listing view in the admin panel).",
-      "reqIds": [
-        "REQ-12"
+        "REQ-4"
       ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Beemedha",
+  "projectName": "Honey e-commerce website",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

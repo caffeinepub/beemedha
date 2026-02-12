@@ -13,10 +13,9 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type AvailabilityStatus = { 'inStock' : null } |
   { 'outOfStock' : null } |
   { 'limited' : null };
-export type Category = { 'organicWild' : null } |
-  { 'rawForest' : null } |
-  { 'herbalInfused' : null } |
-  { 'honeyComb' : null };
+export type Category = { 'beeProducts' : null } |
+  { 'rawHoney' : null } |
+  { 'naturalHoney' : null };
 export interface ContactFormSubmission {
   'id' : bigint,
   'name' : string,
@@ -24,16 +23,26 @@ export interface ContactFormSubmission {
   'message' : string,
   'timestamp' : Time,
 }
+export interface FlavorVariant {
+  'weight' : bigint,
+  'flavor' : string,
+  'description' : string,
+  'price' : Price,
+}
+export interface Price { 'salePrice' : [] | [number], 'listPrice' : number }
 export interface Product {
   'id' : bigint,
   'created' : Time,
+  'isDeleted' : boolean,
   'name' : string,
   'description' : string,
+  'variants' : [] | [ProductVariants],
   'availability' : AvailabilityStatus,
+  'stock' : bigint,
   'timestamp' : Time,
   'category' : Category,
-  'price' : number,
-  'images' : Array<string>,
+  'image' : string,
+  'price' : Price,
 }
 export interface ProductUpdate {
   'id' : bigint,
@@ -46,16 +55,34 @@ export type ProductUpdateType = { 'seasonalAvailability' : null } |
   { 'priceUpdate' : null } |
   { 'newHarvest' : null } |
   { 'limitedTimeOffer' : null };
+export type ProductVariants = { 'weight' : Array<WeightVariant> } |
+  { 'flavor' : Array<FlavorVariant> };
+export type SeedProductsResult = { 'seeded' : { 'count' : bigint } } |
+  { 'alreadySeeded' : null };
 export type Time = bigint;
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface WeightVariant {
+  'weight' : bigint,
+  'description' : string,
+  'price' : Price,
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createProduct' : ActorMethod<
-    [string, string, Category, number, Array<string>, AvailabilityStatus],
+    [
+      string,
+      string,
+      Category,
+      Price,
+      string,
+      AvailabilityStatus,
+      [] | [ProductVariants],
+      bigint,
+    ],
     bigint
   >,
   'createProductUpdate' : ActorMethod<
@@ -69,6 +96,7 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContactFormSubmissions' : ActorMethod<[], Array<ContactFormSubmission>>,
+  'getLimitedProducts' : ActorMethod<[], Array<Product>>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
   'getProductUpdatesByProduct' : ActorMethod<[bigint], Array<ProductUpdate>>,
   'getProductUpdatesByType' : ActorMethod<
@@ -79,6 +107,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'seedProducts' : ActorMethod<[], SeedProductsResult>,
   'submitContactForm' : ActorMethod<[string, string, string], bigint>,
   'updateProduct' : ActorMethod<
     [
@@ -86,9 +115,11 @@ export interface _SERVICE {
       string,
       string,
       Category,
-      number,
-      Array<string>,
+      Price,
+      string,
       AvailabilityStatus,
+      [] | [ProductVariants],
+      bigint,
     ],
     undefined
   >,

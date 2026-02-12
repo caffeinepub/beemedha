@@ -24,7 +24,12 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src="/assets/image-1.png" 
+              alt="Beemedha logo" 
+              className="h-12 w-12 object-contain"
+            />
             <div className="text-3xl font-serif font-bold text-primary">
               Beemedha
             </div>

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Package } from 'lucide-react';
 import { ProductUpdateType } from '../backend';
+import PriceDisplay from '../components/products/PriceDisplay';
+import { normalizeAssetUrl } from '../utils/assets';
 
 function getUpdateTypeBadge(type: ProductUpdateType) {
   const typeMap: Record<ProductUpdateType, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -109,14 +111,14 @@ export default function NewsDetailPage() {
                       <div className="flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary transition-colors">
                         <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                           <img
-                            src={product.images[0] || '/assets/generated/raw-forest-honey.dim_800x800.png'}
+                            src={normalizeAssetUrl(product.image) || '/assets/generated/raw-forest-honey.dim_800x800.png'}
                             alt={product.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div>
                           <h4 className="font-semibold text-lg">{product.name}</h4>
-                          <p className="text-primary font-bold">${product.price.toFixed(2)}</p>
+                          <PriceDisplay price={product.price} size="sm" />
                         </div>
                       </div>
                     </Link>

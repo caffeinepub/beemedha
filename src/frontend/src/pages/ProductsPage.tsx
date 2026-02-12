@@ -12,21 +12,18 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<'all' | Category>('all');
   
   const allProductsQuery = useGetAllProducts();
-  const rawForestQuery = useGetProductsByCategory('rawForest' as Category);
-  const organicWildQuery = useGetProductsByCategory('organicWild' as Category);
-  const herbalInfusedQuery = useGetProductsByCategory('herbalInfused' as Category);
-  const honeyCombQuery = useGetProductsByCategory('honeyComb' as Category);
+  const beeProductsQuery = useGetProductsByCategory(Category.beeProducts);
+  const naturalHoneyQuery = useGetProductsByCategory(Category.naturalHoney);
+  const rawHoneyQuery = useGetProductsByCategory(Category.rawHoney);
 
   const getCurrentQuery = () => {
     switch (selectedCategory) {
-      case 'rawForest':
-        return rawForestQuery;
-      case 'organicWild':
-        return organicWildQuery;
-      case 'herbalInfused':
-        return herbalInfusedQuery;
-      case 'honeyComb':
-        return honeyCombQuery;
+      case Category.beeProducts:
+        return beeProductsQuery;
+      case Category.naturalHoney:
+        return naturalHoneyQuery;
+      case Category.rawHoney:
+        return rawHoneyQuery;
       default:
         return allProductsQuery;
     }
@@ -45,7 +42,7 @@ export default function ProductsPage() {
               Our Products
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Discover our premium collection of pure, natural honey varieties.
+              Discover our premium collection of pure, natural honey varieties and bee products.
             </p>
           </div>
         </Container>
@@ -59,12 +56,11 @@ export default function ProductsPage() {
             className="w-full"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full sm:w-auto">
+              <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
                 <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="rawForest">Raw Forest</TabsTrigger>
-                <TabsTrigger value="organicWild">Organic Wild</TabsTrigger>
-                <TabsTrigger value="herbalInfused">Herbal Infused</TabsTrigger>
-                <TabsTrigger value="honeyComb">Honey Comb</TabsTrigger>
+                <TabsTrigger value={Category.beeProducts}>Bee Products</TabsTrigger>
+                <TabsTrigger value={Category.naturalHoney}>Natural Honey</TabsTrigger>
+                <TabsTrigger value={Category.rawHoney}>Raw Honey</TabsTrigger>
               </TabsList>
               
               {lastUpdated > 0 && (
@@ -93,14 +89,14 @@ export default function ProductsPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="rawForest" className="mt-0">
+            <TabsContent value={Category.beeProducts} className="mt-0">
               {currentQuery.isLoading ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Loading products...</p>
                 </div>
               ) : products.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">No raw forest honey products available yet.</p>
+                  <p className="text-muted-foreground">No bee products available yet.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -111,14 +107,14 @@ export default function ProductsPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="organicWild" className="mt-0">
+            <TabsContent value={Category.naturalHoney} className="mt-0">
               {currentQuery.isLoading ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Loading products...</p>
                 </div>
               ) : products.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">No organic wild honey products available yet.</p>
+                  <p className="text-muted-foreground">No natural honey products available yet.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -129,32 +125,14 @@ export default function ProductsPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="herbalInfused" className="mt-0">
+            <TabsContent value={Category.rawHoney} className="mt-0">
               {currentQuery.isLoading ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Loading products...</p>
                 </div>
               ) : products.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">No herbal infused honey products available yet.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {products.map((product) => (
-                    <ProductCard key={product.id.toString()} product={product} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="honeyComb" className="mt-0">
-              {currentQuery.isLoading ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Loading products...</p>
-                </div>
-              ) : products.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No honey comb products available yet.</p>
+                  <p className="text-muted-foreground">No raw honey products available yet.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

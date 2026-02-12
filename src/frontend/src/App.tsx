@@ -1,4 +1,4 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
+import { RouterProvider, createRouter, createRoute, createRootRoute, createHashHistory } from '@tanstack/react-router';
 import { ThemeProvider } from 'next-themes';
 import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
@@ -90,6 +90,16 @@ const adminDashboardRoute = createRoute({
   ),
 });
 
+const ownerDashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/owner',
+  component: () => (
+    <AdminRouteGuard>
+      <AdminDashboardPage />
+    </AdminRouteGuard>
+  ),
+});
+
 const adminProductsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/products',
@@ -122,11 +132,19 @@ const routeTree = rootRoute.addChildren([
   privacyRoute,
   termsRoute,
   adminDashboardRoute,
+  ownerDashboardRoute,
   adminProductsRoute,
   adminNewsRoute,
 ]);
 
-const router = createRouter({ routeTree });
+// Use hash-based routing for custom domain compatibility
+// This ensures deep links work without server-side configuration
+const hashHistory = createHashHistory();
+
+const router = createRouter({ 
+  routeTree,
+  history: hashHistory,
+});
 
 declare module '@tanstack/react-router' {
   interface Register {

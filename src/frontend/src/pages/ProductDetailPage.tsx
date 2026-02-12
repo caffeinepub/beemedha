@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Section, Container, BrandCard } from '../components/brand/BrandPrimitives';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -6,8 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import PurchasePlaceholder from '../components/products/PurchasePlaceholder';
-import { ArrowLeft, MapPin, Leaf, Star } from 'lucide-react';
-import { AvailabilityStatus } from '../backend';
+import PriceDisplay from '../components/products/PriceDisplay';
+import VariantSelector from '../components/products/VariantSelector';
+import { ArrowLeft, Package, Leaf, Award } from 'lucide-react';
+import type { AvailabilityStatus, Price } from '../backend';
+import { normalizeAssetUrl } from '../utils/assets';
 
 function getAvailabilityBadge(status: AvailabilityStatus) {
   switch (status) {
@@ -22,33 +26,46 @@ function getAvailabilityBadge(status: AvailabilityStatus) {
 
 function getCategoryImage(category: string): string {
   const categoryMap: Record<string, string> = {
-    rawForest: '/assets/generated/raw-forest-honey.dim_800x800.png',
-    organicWild: '/assets/generated/organic-wild-honey.dim_800x800.png',
-    herbalInfused: '/assets/generated/herbal-infused-honey.dim_800x800.png',
-    honeyComb: '/assets/generated/honey-comb.dim_800x800.png',
+    beeProducts: '/assets/products/bee_wax.jpeg',
+    naturalHoney: '/assets/products/honey.jpeg',
+    rawHoney: '/assets/products/Raw_boney.jpeg',
   };
-  return categoryMap[category] || categoryMap.rawForest;
+  return categoryMap[category] || '/assets/products/honey.jpeg';
+}
+
+function getCategoryName(category: string): string {
+  const categoryNames: Record<string, string> = {
+    beeProducts: 'Bee Products',
+    naturalHoney: 'Natural Honey',
+    rawHoney: 'Raw Honey',
+  };
+  return categoryNames[category] || category;
 }
 
 export default function ProductDetailPage() {
   const { productId } = useParams({ from: '/products/$productId' });
   const navigate = useNavigate();
+  
   const productQuery = useGetProduct(BigInt(productId));
-  const updatesQuery = useGetProductUpdatesByProduct(BigInt(productId));
-
   const product = productQuery.data;
+
+  const updatesQuery = useGetProductUpdatesByProduct(BigInt(productId));
   const updates = updatesQuery.data || [];
 
+  // State for variant selection
+  const [selectedVariantPrice, setSelectedVariantPrice] = useState<Price | null>(null);
+  const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
+
   usePageMeta(
-    product?.name || 'Product',
-    product?.description || 'View product details'
+    product?.name || 'Product Details',
+    product?.description || 'View product details and information.'
   );
 
   if (productQuery.isLoading) {
     return (
-      <Section>
+      <Section className="py-12">
         <Container>
-          <div className="text-center py-12">
+          <div className="text-center">
             <p className="text-muted-foreground">Loading product...</p>
           </div>
         </Container>
@@ -58,11 +75,13 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <Section>
+      <Section className="py-12">
         <Container>
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">Product not found</p>
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-serif font-bold">Product Not Found</h1>
+            <p className="text-muted-foreground">The product you're looking for doesn't exist.</p>
             <Button onClick={() => navigate({ to: '/products' })}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Products
             </Button>
           </div>
@@ -71,7 +90,12 @@ export default function ProductDetailPage() {
     );
   }
 
-  const imageUrl = product.images.length > 0 ? product.images[0] : getCategoryImage(product.category);
+  const imageUrl = product.image 
+    ? normalizeAssetUrl(product.image) 
+    : getCategoryImage(product.category);
+
+  // Determine which price to display
+  const displayPrice = selectedVariantPrice || product.price;
 
   return (
     <div>
@@ -85,15 +109,11 @@ export default function ProductDetailPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Products
           </Button>
-        </Container>
-      </Section>
 
-      <Section className="pt-0">
-        <Container>
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Product Image */}
-            <div>
-              <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-premium">
+            <div className="space-y-4">
+              <div className="aspect-square rounded-premium overflow-hidden bg-muted">
                 <img
                   src={imageUrl}
                   alt={product.name}
@@ -105,21 +125,12 @@ export default function ProductDetailPage() {
             {/* Product Info */}
             <div className="space-y-6">
               <div>
+                <Badge variant="outline" className="mb-3">
+                  {getCategoryName(product.category)}
+                </Badge>
                 <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
                   {product.name}
                 </h1>
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-4xl font-bold text-primary">
-                    ${product.price.toFixed(2)}
-                  </span>
-                  {getAvailabilityBadge(product.availability)}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h2 className="text-2xl font-serif font-semibold mb-3">Description</h2>
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   {product.description}
                 </p>
@@ -127,87 +138,96 @@ export default function ProductDetailPage() {
 
               <Separator />
 
-              <div>
-                <h2 className="text-2xl font-serif font-semibold mb-3">Nutritional Information</h2>
-                <p className="text-muted-foreground">
-                  Pure natural honey is rich in antioxidants, enzymes, and minerals. Contains natural sugars, trace amounts of vitamins and minerals, and beneficial plant compounds.
-                </p>
+              {/* Variant Selector */}
+              {product.variants && (
+                <>
+                  <VariantSelector
+                    variants={product.variants}
+                    onVariantChange={(price, label) => {
+                      setSelectedVariantPrice(price);
+                      setSelectedVariantLabel(label);
+                    }}
+                  />
+                  <Separator />
+                </>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <PriceDisplay price={displayPrice} size="lg" />
+                  {getAvailabilityBadge(product.availability)}
+                </div>
+
+                <PurchasePlaceholder />
               </div>
 
               <Separator />
 
-              <div>
-                <h2 className="text-2xl font-serif font-semibold mb-3 flex items-center gap-2">
-                  <MapPin className="h-6 w-6 text-primary" />
-                  Harvest Location
-                </h2>
-                <p className="text-muted-foreground">
-                  Sourced from pristine natural forests and organic farms, ensuring the highest quality and purity.
-                </p>
+              {/* Product Features */}
+              <div className="space-y-4">
+                <h3 className="font-serif font-semibold text-xl">Product Features</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Leaf className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">100% Natural</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Pure and unprocessed, straight from nature
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Award className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">Premium Quality</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Carefully sourced and quality tested
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">Secure Packaging</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Safely packaged to preserve freshness
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              <Separator />
-
-              <div>
-                <h2 className="text-2xl font-serif font-semibold mb-3 flex items-center gap-2">
-                  <Leaf className="h-6 w-6 text-accent" />
-                  Benefits
-                </h2>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent mt-1">✓</span>
-                    <span>Natural energy boost</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent mt-1">✓</span>
-                    <span>Rich in antioxidants</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent mt-1">✓</span>
-                    <span>Supports immune system</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent mt-1">✓</span>
-                    <span>Natural antibacterial properties</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <PurchasePlaceholder />
             </div>
           </div>
         </Container>
       </Section>
 
-      {/* Customer Reviews */}
-      <Section className="bg-muted/30">
-        <Container>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold mb-8 flex items-center gap-3">
-            <Star className="h-8 w-8 text-primary" />
-            Customer Reviews
-          </h2>
-          {updates.length === 0 ? (
-            <BrandCard className="p-8 text-center">
-              <p className="text-muted-foreground">
-                No reviews yet. Be the first to share your experience!
-              </p>
-            </BrandCard>
-          ) : (
-            <div className="space-y-4">
+      {/* Product Updates */}
+      {updates.length > 0 && (
+        <Section className="bg-muted/30">
+          <Container>
+            <h2 className="text-3xl font-serif font-bold mb-8">Product Updates</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {updates.map((update) => (
                 <BrandCard key={update.id.toString()} className="p-6">
+                  <Badge variant="outline" className="mb-3">
+                    {update.productUpdateType}
+                  </Badge>
                   <p className="text-muted-foreground">{update.message}</p>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-4">
                     {new Date(Number(update.timestamp) / 1000000).toLocaleDateString()}
                   </p>
                 </BrandCard>
               ))}
             </div>
-          )}
-        </Container>
-      </Section>
+          </Container>
+        </Section>
+      )}
     </div>
   );
 }
