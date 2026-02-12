@@ -1,13 +1,19 @@
-import Array "mo:core/Array";
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
+import Int "mo:core/Int";
 import Time "mo:core/Time";
 
 module {
+  // Type definitions based on old actor
   type Category = {
     #beeProducts;
     #naturalHoney;
     #rawHoney;
+  };
+
+  type AvailabilityStatus = {
+    #inStock;
+    #limited;
+    #outOfStock;
   };
 
   type Price = {
@@ -15,10 +21,24 @@ module {
     salePrice : ?Float;
   };
 
-  type AvailabilityStatus = {
-    #inStock;
-    #limited;
-    #outOfStock;
+  type Product = {
+    id : Nat;
+    name : Text;
+    description : Text;
+    category : Category;
+    price : Price;
+    image : Text;
+    availability : AvailabilityStatus;
+    created : Time.Time;
+    timestamp : Time.Time;
+    variants : ?ProductVariants;
+    stock : Nat;
+    isDeleted : Bool;
+  };
+
+  type ProductVariants = {
+    #weight : [WeightVariant];
+    #flavor : [FlavorVariant];
   };
 
   type WeightVariant = {
@@ -34,60 +54,78 @@ module {
     weight : Nat;
   };
 
-  type ProductVariants = {
-    #weight : [WeightVariant];
-    #flavor : [FlavorVariant];
+  type ProductUpdate = {
+    id : Nat;
+    productUpdateType : ProductUpdateType;
+    productId : Nat;
+    message : Text;
+    timestamp : Time.Time;
   };
 
-  type OldProduct = {
+  type ProductUpdateType = {
+    #newHarvest;
+    #seasonalAvailability;
+    #priceUpdate;
+    #limitedTimeOffer;
+  };
+
+  type ContactFormSubmission = {
     id : Nat;
     name : Text;
-    description : Text;
-    category : Category;
-    price : Price;
-    images : [Text];
-    availability : AvailabilityStatus;
+    email : Text;
+    message : Text;
     timestamp : Time.Time;
-    created : Time.Time;
-    variants : ?ProductVariants;
   };
 
-  type NewProduct = {
-    id : Nat;
+  type UserRole = {
+    #guest;
+    #user;
+    #admin;
+  };
+
+  type UserProfile = {
     name : Text;
-    description : Text;
-    category : Category;
-    price : Price;
-    image : Text;
-    availability : AvailabilityStatus;
-    created : Time.Time;
-    timestamp : Time.Time;
-    variants : ?ProductVariants;
-    stock : Nat;
-    isDeleted : Bool;
   };
 
+  type Logo = {
+    mimeType : Text;
+    data : [Nat8];
+  };
+
+  // Old actor includes adminPrincipals and nextProductIdMap.
   type OldActor = {
-    products : Map.Map<Nat, OldProduct>;
+    nextUpdateId : Nat;
+    nextContactId : Nat;
+    products : Map.Map<Nat, Product>;
+    updates : Map.Map<Nat, ProductUpdate>;
+    contacts : Map.Map<Nat, ContactFormSubmission>;
+    userProfiles : Map.Map<Principal, UserProfile>;
+    logo : ?Logo;
+    adminPrincipals : Map.Map<Principal, Bool>;
+    nextProductIdMap : Map.Map<Text, Nat>;
   };
 
+  // New actor omits adminPrincipals and nextProductIdMap.
   type NewActor = {
-    products : Map.Map<Nat, NewProduct>;
+    nextUpdateId : Nat;
+    nextContactId : Nat;
+    products : Map.Map<Nat, Product>;
+    updates : Map.Map<Nat, ProductUpdate>;
+    contacts : Map.Map<Nat, ContactFormSubmission>;
+    userProfiles : Map.Map<Principal, UserProfile>;
+    logo : ?Logo;
   };
 
+  // Migration function
   public func run(old : OldActor) : NewActor {
-    let newProducts = old.products.map<Nat, OldProduct, NewProduct>(
-      func(_id, oldProduct) {
-        {
-          oldProduct with
-          image = if (oldProduct.images.size() > 0) {
-            oldProduct.images[0];
-          } else { "/assets/images/default.webp" };
-          stock = 100;
-          isDeleted = false;
-        };
-      }
-    );
-    { products = newProducts };
+    {
+      nextUpdateId = old.nextUpdateId;
+      nextContactId = old.nextContactId;
+      products = old.products;
+      updates = old.updates;
+      contacts = old.contacts;
+      userProfiles = old.userProfiles;
+      logo = old.logo;
+    };
   };
 };

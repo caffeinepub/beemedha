@@ -1,18 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build an admin-management page for the app, restricted so only the user's Internet Identity principal can access it.",
+  "summary": "Project to deploy an application with an admin page and role-based access, initially granting sole admin rights to the user’s Internet Identity principal.",
   "architectural_notes": [
-    "Restrict admin-management page access via Internet Identity principal allowlist (self-only)."
+    "Use an admin allowlist keyed by Internet Identity principal; initially operate in single-admin mode (only one principal has admin rights)."
   ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-restrict-access-to-the-admin-access-management-route-admin-access-so-it-can-only-be-viewed-used-by-the-owner-s-internet-identity-principal-zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe-self-only-access-even-if-other-principals-are-admins",
-      "title": "Restrict access to the Admin Access management route (/admin/access) so it can only be viewed/used by the owner’s Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" (self-only access), even if other principals are admins.",
+      "id": "feature-update-the-admin-access-management-ui-admin-access-to-reflect-single-admin-mode-by-disabling-or-removing-the-add-new-admin-and-remove-administrator-actions-and-showing-an-english-explanation-that-admin-access-is-locked-to-the-owner-principal",
+      "title": "Update the Admin Access Management UI (/admin/access) to reflect single-admin mode by disabling or removing the “Add New Admin” and “Remove Administrator” actions and showing an English explanation that admin access is locked to the owner principal.",
       "reqIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "version": 1
     }
@@ -20,20 +20,28 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Admin-management page that only the user's Internet Identity principal can access (self-only access control)",
+      "summary": "Implement admin access control: make the provided Internet Identity principal the sole admin (single-admin mode) and enforce permissions on the admin page.",
       "reqIds": [],
       "status": "pending"
     },
     {
+      "id": "AR-2",
+      "summary": "Grant admin privileges to the Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" and ensure it remains the only administrator (single-admin mode).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "AR-3",
-      "summary": "Enforce the same self-only access control on the backend admin-management APIs used by the Admin Access page (listAdmins, addAdmin, removeAdmin), allowing calls only when caller is the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\".",
+      "summary": "Enforce single-admin mode in the admin-management APIs: only the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" can call admin-management endpoints, and add/remove operations must be blocked so no additional admins can be created and the owner cannot be removed/demoted.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Restrict Admin Access management page to a single owner principal",
+  "projectName": "Make provided principal the sole admin (single-admin mode)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

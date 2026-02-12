@@ -1,36 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Owner-only access restriction for Admin Access route",
+  "title": "Single-admin mode UI adjustments for Admin Access Management",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Restrict /admin/access to the single owner Internet Identity principal with a login-required flow and explicit Access Denied UI for all others (including admins).",
+      "id": "REQ-3",
+      "summary": "Update /admin/access to reflect single-admin mode by removing admin add/remove actions and showing an English explanation that admin access is locked to the owner principal.",
       "acceptanceCriteria": [
-        "When logged in as principal zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe, navigating to /#/admin/access renders the existing AdminAccessPage UI.",
-        "When logged in as any other principal, navigating to /#/admin/access shows an explicit Access Denied experience (not the admin management UI), even if that principal would otherwise pass the generic admin check.",
-        "When not logged in, /#/admin/access prompts the user to log in with Internet Identity, and after login still enforces the owner-principal restriction."
+        "On /admin/access, the UI does not allow submitting the add-admin form and does not allow triggering remove-admin for any entry.",
+        "The page shows a clear English notice that single-admin mode is enabled and only the owner principal can be an admin.",
+        "The current admins list renders and shows exactly one admin entry (the owner principal) when listAdmins returns one principal."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/config/owner.ts",
-          "operation": "create",
-          "description": "Add a single source of truth for the owner principal string (zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe) and a small helper to compare the current authenticated principal string to the owner. Verify the component's usage instructions before implementing (authorization: frontend auth/access-control guidance)."
-        },
-        {
-          "path": "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
-          "operation": "create",
-          "description": "Create an owner-only route guard for /admin/access that uses the immutable useInternetIdentity hook to (1) prompt login when not authenticated, (2) show an explicit Access Denied screen when authenticated but not the owner principal, and (3) render children only for the owner principal. Ensure all user-facing text is English. Verify the component's usage instructions before implementing (authorization: show AccessDeniedScreen for unauthorized users; handle auth state correctly)."
-        },
-        {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/admin/AdminAccessPage.tsx",
           "operation": "modify",
-          "description": "Wire the new OwnerOnlyRouteGuard into routing by wrapping the existing /admin/access route with it (replacing the current AdminRouteGuard wrapper for this route only). Keep all other admin routes unchanged. Verify the component's usage instructions before implementing (authorization: frontend auth/access-control guidance)."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Use the immutable useInternetIdentity hook plus the shared owner principal helper to hide/disable the 'Admin Access' navigation card for non-owner admins (optional UX hardening), while leaving the route enforcement to the guard. Keep all text in English. Verify the component's usage instructions before implementing (authorization: access-control UI guidance)."
+          "description": "Adjust the Admin Access Management page to match single-admin mode: remove (or fully disable) the \"Add New Admin\" section and any calls to add-admin mutations; remove (or fully disable) the \"Remove Administrator\" action and confirmation dialog so removal cannot be triggered for any listed admin; add a clear English notice near the top of the page stating that single-admin mode is enabled and admin access is locked to the owner principal. Reference the owner principal from the existing frontend owner configuration (frontend/src/config/owner.ts) so the notice can display the exact owner principal string."
         }
       ]
     }

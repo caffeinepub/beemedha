@@ -1,5 +1,4 @@
 import Array "mo:core/Array";
-import List "mo:core/List";
 import Map "mo:core/Map";
 import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
@@ -11,9 +10,10 @@ import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
-
-
+// Apply migration when upgrading to this version.
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -112,7 +112,6 @@ actor {
     data : [Nat8];
   };
 
-  let nextProductIdMap = Map.empty<Text, Nat>();
   var nextUpdateId = 0;
   var nextContactId = 0;
   var products = Map.empty<Nat, Product>();
@@ -121,9 +120,6 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
 
   var logo : ?Logo = null;
-
-  // Track admins for listing purposes
-  let adminPrincipals = Map.empty<Principal, Bool>();
 
   // Strict owner check for admin management
   func adminOnlyCheck(caller : Principal) {
@@ -136,46 +132,17 @@ actor {
   // Admin Management APIs
   public query ({ caller }) func listAdmins() : async [Principal] {
     adminOnlyCheck(caller);
-    adminPrincipals.keys().toArray();
+    [Principal.fromText("zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe")];
   };
 
-  public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
+  public shared ({ caller }) func addAdmin(_newAdmin : Principal) : async () {
     adminOnlyCheck(caller);
-
-    // Prevent adding anonymous principal as admin
-    if (newAdmin.isAnonymous()) {
-      Runtime.trap("Cannot add anonymous principal as admin");
-    };
-
-    // Check if already an admin
-    if (AccessControl.isAdmin(accessControlState, newAdmin)) {
-      Runtime.trap("Principal is already an admin");
-    };
-
-    AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
-
-    // Track in our admin list
-    adminPrincipals.add(newAdmin, true);
+    Runtime.trap("Admin creation not allowed in single-admin mode");
   };
 
-  public shared ({ caller }) func removeAdmin(adminToRemove : Principal) : async () {
+  public shared ({ caller }) func removeAdmin(_adminToRemove : Principal) : async () {
     adminOnlyCheck(caller);
-
-    // Prevent removing self
-    if (caller == adminToRemove) {
-      Runtime.trap("Cannot remove yourself as admin");
-    };
-
-    // Check if the target is actually an admin
-    if (not (AccessControl.isAdmin(accessControlState, adminToRemove))) {
-      Runtime.trap("Principal is not an admin");
-    };
-
-    // Demote to user role
-    AccessControl.assignRole(accessControlState, caller, adminToRemove, #user);
-
-    // Remove from admin tracking
-    adminPrincipals.remove(adminToRemove);
+    Runtime.trap("Cannot remove owner in single-admin mode");
   };
 
   // User Profile Management

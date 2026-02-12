@@ -22,7 +22,7 @@
   "frontend/src/utils/logo.ts": "Utility functions to convert backend Logo objects (mimeType + Uint8Array) into browser-renderable URLs and safely revoke object URLs to prevent memory leaks.",
   "frontend/src/pages/admin/AdminLogoPage.tsx": "Admin-only page for uploading and managing the site logo with file validation (type/size), live preview, current logo display, and proper error handling using React Query mutations.",
   "frontend/src/utils/principal.ts": "Utility functions to validate and parse Internet Identity principal text strings, format principals for display with truncation, and provide consistent principal validation across the app.",
-  "frontend/src/pages/admin/AdminAccessPage.tsx": "Admin-only page for managing administrator access with current user principal display, add new admin by principal input with validation, list of current admins (Principal[]) with copy/remove actions, and confirmation dialogs for removing admins with self-removal prevention.",
+  "frontend/src/pages/admin/AdminAccessPage.tsx": "Admin-only page for viewing administrator access in single-admin mode; displays owner principal notice, shows current user principal with copy functionality, disables add/remove admin actions, and lists the single owner admin with locked controls.",
   "frontend/src/config/owner.ts": "Owner principal constant and helper function to check if a given principal matches the owner principal for admin management access control.",
   "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx": "Owner-only route guard component that prompts login for unauthenticated users and shows access denied screen for non-owner authenticated users, only rendering children for the owner principal."
 }

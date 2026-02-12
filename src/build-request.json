@@ -1,61 +1,93 @@
 {
   "kind": "build_request",
-  "title": "Restrict Admin Access management page to a single owner principal",
+  "title": "Make provided principal the sole admin (single-admin mode)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restrict access to the Admin Access management route (/admin/access) so it can only be viewed/used by the owner’s Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" (self-only access), even if other principals are admins.",
-      "target": "frontend",
+      "text": "Grant admin privileges to the Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" and ensure it remains the only administrator (single-admin mode).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "recent-8",
-          "recent-10"
+          "msg-1",
+          "msg-2",
+          "msg-3"
         ],
         "quotes": [
-          "make it accessed by myself only",
-          "1. Do you want me to build the admin‑management page so you can add that principal as an admin ,can be accessed by myself only"
+          "make me as a admin",
+          "should me be the only admin for now",
+          "zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in as principal zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe, navigating to /#/admin/access renders the existing AdminAccessPage UI.",
-        "When logged in as any other principal, navigating to /#/admin/access shows an explicit Access Denied experience (not the admin management UI), even if that principal would otherwise pass the generic admin check.",
-        "When not logged in, /#/admin/access prompts the user to log in with Internet Identity, and after login still enforces the owner-principal restriction."
+        "After deployment/upgrade, calls that require admin permissions (e.g., createProduct, updateLogo, seedProducts) succeed when the caller is principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\".",
+        "After deployment/upgrade, the owner principal appears as an admin when checked via the existing admin-check API used by the frontend (React Query hook useIsCallerAdmin).",
+        "Admin state is enforced server-side and does not rely on frontend checks."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Enforce the same self-only access control on the backend admin-management APIs used by the Admin Access page (listAdmins, addAdmin, removeAdmin), allowing calls only when caller is the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\".",
+      "text": "Enforce single-admin mode in the admin-management APIs: only the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" can call admin-management endpoints, and add/remove operations must be blocked so no additional admins can be created and the owner cannot be removed/demoted.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "recent-8",
-          "recent-10"
+          "msg-2",
+          "msg-4"
         ],
         "quotes": [
-          "make it accessed by myself only",
-          "1. Do you want me to build the admin‑management page so you can add that principal as an admin ,can be accessed by myself only"
+          "should me be the only admin for now",
+          "build it"
         ]
       },
       "acceptanceCriteria": [
-        "Calling listAdmins/addAdmin/removeAdmin as the owner principal succeeds (subject to existing validation like preventing anonymous principals and preventing self-removal).",
-        "Calling listAdmins/addAdmin/removeAdmin as any non-owner principal traps/rejects with an unauthorized error.",
-        "Other existing backend APIs and admin functionality behavior remains unchanged."
+        "backend/main.mo rejects attempts to add any admin principal (including by the owner) with a clear error message indicating single-admin mode is enabled.",
+        "backend/main.mo rejects attempts to remove the owner principal as admin (even if such a call is attempted via candid/direct calls).",
+        "listAdmins returns exactly one principal: \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\"."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update the Admin Access Management UI (/admin/access) to reflect single-admin mode by disabling or removing the “Add New Admin” and “Remove Administrator” actions and showing an English explanation that admin access is locked to the owner principal.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-2",
+          "msg-4"
+        ],
+        "quotes": [
+          "should me be the only admin for now",
+          "build it"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On /admin/access, the UI does not allow submitting the add-admin form and does not allow triggering remove-admin for any entry.",
+        "The page shows a clear English notice that single-admin mode is enabled and only the owner principal can be an admin.",
+        "The current admins list renders and shows exactly one admin entry (the owner principal) when listAdmins returns one principal."
       ]
     }
   ],
   "constraints": [
-    "Frontend files under frontend/src/components/ui and the Internet Identity/actor hooks under frontend/src/hooks/useInternetIdentity.ts(x) and frontend/src/hooks/useActor.ts are immutable and must not be edited.",
-    "Keep the backend as a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if a state upgrade is required (not expected for this change unless new stable state is introduced).",
-    "All user-facing text must be in English."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not add third-party authentication providers; only Internet Identity is used.",
-    "Do not add new admin features beyond restricting access to the existing Admin Access page and its related backend APIs.",
-    "Do not redesign unrelated admin routes (/admin, /admin/products, /admin/news, /admin/logo) unless required to implement the self-only restriction for /admin/access."
+    "Supporting multiple admins or role escalation flows beyond the single owner principal.",
+    "Third-party authentication providers beyond Internet Identity.",
+    "Adding real-time updates (WebSockets/push)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

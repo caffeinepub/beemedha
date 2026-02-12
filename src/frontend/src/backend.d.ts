@@ -96,7 +96,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    addAdmin(newAdmin: Principal): Promise<void>;
+    addAdmin(_newAdmin: Principal): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createProduct(name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<bigint>;
     createProductUpdate(productUpdateType: ProductUpdateType, productId: bigint, message: string): Promise<bigint>;
@@ -116,7 +116,7 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listAdmins(): Promise<Array<Principal>>;
-    removeAdmin(adminToRemove: Principal): Promise<void>;
+    removeAdmin(_adminToRemove: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     seedProducts(): Promise<SeedProductsResult>;
     submitContactForm(name: string, email: string, message: string): Promise<bigint>;

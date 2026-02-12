@@ -2,13 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-restrict-access-to-the-admin-access-management-route-admin-access-so-it-can-only-be-viewed-used-by-the-owner-s-internet-identity-principal-zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe-self-only-access-even-if-other-principals-are-admins",
-      "featureTitle": "Restrict access to the Admin Access management route (/admin/access) so it can only be viewed/used by the owner’s Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" (self-only access), even if other principals are admins.",
+      "featureId": "feature-update-the-admin-access-management-ui-admin-access-to-reflect-single-admin-mode-by-disabling-or-removing-the-add-new-admin-and-remove-administrator-actions-and-showing-an-english-explanation-that-admin-access-is-locked-to-the-owner-principal",
+      "featureTitle": "Update the Admin Access Management UI (/admin/access) to reflect single-admin mode by disabling or removing the “Add New Admin” and “Remove Administrator” actions and showing an English explanation that admin access is locked to the owner principal.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
-        "frontend/src/config/owner.ts",
-        "frontend/src/pages/admin/AdminDashboardPage.tsx"
+        "frontend/src/pages/admin/AdminAccessPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -19,7 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "confidence": "high"
     }

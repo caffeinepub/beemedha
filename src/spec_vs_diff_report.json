@@ -1,42 +1,34 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T17:42:51.438Z",
-  "summary": "REQ-1 and REQ-2 appear largely implemented: /admin/access is now wrapped with an owner-only route guard that shows login-required vs access-denied vs the real page, and backend admin-management APIs now enforce an owner-principal check. However, the diff also introduces an unrequested /owner route and includes user-facing copy suggesting Google sign-in, which conflicts with the non-goal of not adding third-party auth providers. There is also a potential behavior change in listAdmins due to a new, non-stable tracking map that may omit pre-existing admins.",
+  "generatedAt": "2026-02-12T18:19:06.718Z",
+  "summary": "Backend implements owner-only admin-management APIs (listAdmins/addAdmin/removeAdmin) with single-admin behavior and adds a migration module; frontend Admin Access page shows a single-admin notice and owner principal display/copy UI. However, the diff summary does not show the owner being granted admin permissions in the backend’s actual authorization state used by admin-gated operations (e.g., createProduct/updateLogo/seedProducts) or by the existing admin-check API used by the frontend (useIsCallerAdmin).",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Other existing backend APIs and admin functionality behavior remains unchanged.",
-      "reason": "The backend now uses a new in-memory `adminPrincipals` map for `listAdmins()` that is only populated on `addAdmin()`. This may change behavior by not listing admins that were already present in `accessControlState` before this tracking was introduced (and it is not shown as stable/persisted).",
+      "id": "REQ-1",
+      "requirement": "Grant admin privileges to the Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" and ensure it remains the only administrator (single-admin mode).",
+      "reason": "The diff shows admin-management endpoints hardcoded to the owner and uses AccessControl/MixinAuthorization for permission checks elsewhere, but does not show any code that actually assigns the owner principal the admin role in `accessControlState` (or otherwise ensures `AccessControl.isAdmin(...)` / the existing admin-check API recognizes the owner as admin). Without that, admin-gated calls like createProduct/updateLogo/seedProducts and the `useIsCallerAdmin` check may still fail for the owner.",
       "evidence": [
-        "backend/main.mo"
+        "backend/main.mo (shows `let accessControlState = AccessControl.initState();` and uses `AccessControl.isAdmin(accessControlState, caller)` but no visible grant/seed of owner as admin)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduced an unrequested /owner route that renders the admin dashboard.",
-      "reason": "BuildRequest only asks to restrict /admin/access; no new routes were requested.",
+      "description": "Introduced an upgrade migration module that removes `adminPrincipals` and `nextProductIdMap` from stable state via `(with migration = Migration.run)` and a new `backend/migration.mo`.",
+      "reason": "The BuildRequest focuses on enforcing single-admin mode and UI changes; it does not request adding a migration system or removing/altering unrelated stable-state fields.",
       "evidence": [
-        "frontend/src/App.tsx"
-      ]
-    },
-    {
-      "description": "User-facing login prompt mentions Google sign-in within Internet Identity flow.",
-      "reason": "Non-goals state not to add third-party authentication providers; while this may be informational copy, it explicitly introduces/advertises Google sign-in.",
-      "evidence": [
-        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx"
+        "backend/migration.mo",
+        "backend/main.mo (imports `Migration` and applies `(with migration = Migration.run)`)"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
-    "frontend/src/config/owner.ts",
-    "frontend/src/pages/admin/AdminDashboardPage.tsx",
+    "frontend/src/pages/admin/AdminAccessPage.tsx",
     "project_state.json"
   ]
 }
