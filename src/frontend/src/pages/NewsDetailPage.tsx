@@ -21,11 +21,11 @@ function getUpdateTypeBadge(type: ProductUpdateType) {
 }
 
 export default function NewsDetailPage() {
-  const { newsId } = useParams({ from: '/news/$newsId' });
+  const { updateId } = useParams({ from: '/news/$updateId' });
   const navigate = useNavigate();
   const updatesQuery = useGetAllProductUpdates();
   
-  const update = updatesQuery.data?.find(u => u.id.toString() === newsId);
+  const update = updatesQuery.data?.find(u => u.id.toString() === updateId);
   const productQuery = useGetProduct(update ? update.productId : null);
   const product = productQuery.data;
 

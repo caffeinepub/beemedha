@@ -9,11 +9,11 @@ import NewsPage from './pages/NewsPage';
 import NewsDetailPage from './pages/NewsDetailPage';
 import CertificationsPage from './pages/CertificationsPage';
 import ContactPage from './pages/ContactPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminNewsPage from './pages/admin/AdminNewsPage';
+import AdminLogoPage from './pages/admin/AdminLogoPage';
 import AdminRouteGuard from './components/admin/AdminRouteGuard';
 
 const rootRoute = createRootRoute({
@@ -52,7 +52,7 @@ const newsRoute = createRoute({
 
 const newsDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/news/$newsId',
+  path: '/news/$updateId',
   component: NewsDetailPage,
 });
 
@@ -68,19 +68,13 @@ const contactRoute = createRoute({
   component: ContactPage,
 });
 
-const privacyRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/privacy',
-  component: PrivacyPolicyPage,
-});
-
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/terms',
   component: TermsPage,
 });
 
-const adminDashboardRoute = createRoute({
+const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
   component: () => (
@@ -90,7 +84,7 @@ const adminDashboardRoute = createRoute({
   ),
 });
 
-const ownerDashboardRoute = createRoute({
+const ownerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/owner',
   component: () => (
@@ -120,6 +114,16 @@ const adminNewsRoute = createRoute({
   ),
 });
 
+const adminLogoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/logo',
+  component: () => (
+    <AdminRouteGuard>
+      <AdminLogoPage />
+    </AdminRouteGuard>
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   aboutRoute,
@@ -129,21 +133,20 @@ const routeTree = rootRoute.addChildren([
   newsDetailRoute,
   certificationsRoute,
   contactRoute,
-  privacyRoute,
   termsRoute,
-  adminDashboardRoute,
-  ownerDashboardRoute,
+  adminRoute,
+  ownerRoute,
   adminProductsRoute,
   adminNewsRoute,
+  adminLogoRoute,
 ]);
 
-// Use hash-based routing for custom domain compatibility
-// This ensures deep links work without server-side configuration
 const hashHistory = createHashHistory();
 
-const router = createRouter({ 
+const router = createRouter({
   routeTree,
   history: hashHistory,
+  defaultPreload: 'intent',
 });
 
 declare module '@tanstack/react-router' {
@@ -154,7 +157,7 @@ declare module '@tanstack/react-router' {
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <RouterProvider router={router} />
     </ThemeProvider>
   );

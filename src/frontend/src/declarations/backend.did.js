@@ -78,6 +78,10 @@ export const ContactFormSubmission = IDL.Record({
   'message' : IDL.Text,
   'timestamp' : Time,
 });
+export const Logo = IDL.Record({
+  'data' : IDL.Vec(IDL.Nat8),
+  'mimeType' : IDL.Text,
+});
 export const SeedProductsResult = IDL.Variant({
   'seeded' : IDL.Record({ 'count' : IDL.Nat }),
   'alreadySeeded' : IDL.Null,
@@ -117,6 +121,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getLimitedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getLogo' : IDL.Func([], [IDL.Opt(Logo)], ['query']),
   'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
   'getProductUpdatesByProduct' : IDL.Func(
       [IDL.Nat],
@@ -135,9 +140,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'makeMeAdmin' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'seedProducts' : IDL.Func([], [SeedProductsResult], []),
   'submitContactForm' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
+  'updateLogo' : IDL.Func([IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
   'updateProduct' : IDL.Func(
       [
         IDL.Nat,
@@ -228,6 +235,10 @@ export const idlFactory = ({ IDL }) => {
     'message' : IDL.Text,
     'timestamp' : Time,
   });
+  const Logo = IDL.Record({
+    'data' : IDL.Vec(IDL.Nat8),
+    'mimeType' : IDL.Text,
+  });
   const SeedProductsResult = IDL.Variant({
     'seeded' : IDL.Record({ 'count' : IDL.Nat }),
     'alreadySeeded' : IDL.Null,
@@ -267,6 +278,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getLimitedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getLogo' : IDL.Func([], [IDL.Opt(Logo)], ['query']),
     'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
     'getProductUpdatesByProduct' : IDL.Func(
         [IDL.Nat],
@@ -289,6 +301,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'makeMeAdmin' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'seedProducts' : IDL.Func([], [SeedProductsResult], []),
     'submitContactForm' : IDL.Func(
@@ -296,6 +309,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'updateLogo' : IDL.Func([IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
     'updateProduct' : IDL.Func(
         [
           IDL.Nat,

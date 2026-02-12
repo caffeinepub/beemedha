@@ -29,6 +29,7 @@ export interface FlavorVariant {
   'description' : string,
   'price' : Price,
 }
+export interface Logo { 'data' : Uint8Array, 'mimeType' : string }
 export interface Price { 'salePrice' : [] | [number], 'listPrice' : number }
 export interface Product {
   'id' : bigint,
@@ -97,6 +98,7 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContactFormSubmissions' : ActorMethod<[], Array<ContactFormSubmission>>,
   'getLimitedProducts' : ActorMethod<[], Array<Product>>,
+  'getLogo' : ActorMethod<[], [] | [Logo]>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
   'getProductUpdatesByProduct' : ActorMethod<[bigint], Array<ProductUpdate>>,
   'getProductUpdatesByType' : ActorMethod<
@@ -106,9 +108,11 @@ export interface _SERVICE {
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'makeMeAdmin' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'seedProducts' : ActorMethod<[], SeedProductsResult>,
   'submitContactForm' : ActorMethod<[string, string, string], bigint>,
+  'updateLogo' : ActorMethod<[string, Uint8Array], undefined>,
   'updateProduct' : ActorMethod<
     [
       bigint,

@@ -1,136 +1,73 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Web Owner dashboard alias, II admin guard text compliance, and revised admin product table + modal CRUD UX",
+  "title": "Admin-only persistent logo upload with header rendering (frontend)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add /owner admin dashboard route (alias to existing dashboard) and set H1 + document title to \"Web Owner Dashboard\".",
+      "id": "REQ-2",
+      "summary": "Add React Query hooks to fetch and update the persisted site logo and refresh cached logo data after upload.",
       "acceptanceCriteria": [
-        "Visiting #/owner renders the admin dashboard UI (same functionality as the admin dashboard).",
-        "The visible page header reads \"Web Owner Dashboard\".",
-        "The browser/document title is \"Web Owner Dashboard\"."
+        "A hook exists to fetch the current logo and exposes loading/error states.",
+        "A hook exists to upload/replace the logo and on success invalidates/refetches the logo query so other components can update without a manual refresh.",
+        "If the actor is unavailable, the hooks do not crash the app and behave consistently with existing hooks’ patterns in the project."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks for logo read/write: a query hook (e.g., useGetLogo) that calls the backend actor getLogo and returns null/empty states safely when actor is unavailable; and a mutation hook (e.g., useUpdateLogo) that calls updateLogo(mimeType, data) and on success invalidates/refetches the ['logo'] query key so the UI updates immediately. Align enabled/retry behavior with existing hooks patterns. (Authorization component context: hooks will be used within admin-guarded UI flows; verify the component's usage instructions before implementing.)"
+        },
+        {
+          "path": "frontend/src/utils/logo.ts",
+          "operation": "create",
+          "description": "Create a small helper to convert the backend Logo (mimeType + Uint8Array bytes) into a browser-renderable URL (e.g., data URL) and/or object URL, suitable for use in the Header and admin preview. Ensure it handles null/empty data robustly. (Verify the component's usage instructions before implementing.)"
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Create an admin-only page reachable from the admin dashboard to upload/replace the logo with validation and preview.",
+      "acceptanceCriteria": [
+        "The page is protected by the existing AdminRouteGuard (non-admin users cannot access it).",
+        "The page includes a file input restricted to common image formats and shows a clear error message for invalid selections (e.g., non-image file).",
+        "After a successful upload, the page shows the newly saved logo without requiring a full page reload."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/admin/AdminLogoPage.tsx",
+          "operation": "create",
+          "description": "Implement an admin-only logo management page UI: show current saved logo preview using the logo query hook; provide a file picker restricted to common image formats (via accept and client-side MIME checks), show clear English validation errors (e.g., non-image), and on submit read bytes (ArrayBuffer->Uint8Array) and call the update logo mutation. On success, rely on query invalidation/refetch to re-render the new preview without full reload. Use existing authorization patterns (AdminRouteGuard + isCallerAdmin) and handle authorization failures gracefully. (Verify the component's usage instructions before implementing.)"
+        },
+        {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Register a new hash route at \"/owner\" that renders the same guarded dashboard content as \"/admin\" (alias), ensuring navigation is not orphaned."
+          "description": "Register a new guarded admin route (e.g., /admin/logo) that renders AdminLogoPage inside the existing AdminRouteGuard, ensuring it is navigable and not an orphan view. (Authorization component context: AdminRouteGuard is part of the role-based access control flow; verify the component's usage instructions before implementing.)"
         },
         {
           "path": "frontend/src/pages/admin/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Update the dashboard H1 and usePageMeta title to \"Web Owner Dashboard\" so both the visible header and document title match the requirement."
-        },
-        {
-          "path": "frontend/src/hooks/usePageMeta.ts",
-          "operation": "modify",
-          "description": "Adjust document-title behavior so the resulting document title is exactly \"Web Owner Dashboard\" when requested (i.e., avoid appending a suffix for this page)."
+          "description": "Add a new navigation card/link from the existing admin dashboard to the new logo management page route (e.g., /admin/logo), keeping copy in English and consistent with existing dashboard cards. (Verify the component's usage instructions before implementing.)"
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Enforce Internet Identity + admin verification gating for owner/admin routes, with exact guard messages \"Login Required\" and \"Access Denied\".",
+      "id": "REQ-4",
+      "summary": "Render the persisted logo in the Header with a safe fallback to the existing static logo behavior.",
       "acceptanceCriteria": [
-        "When not authenticated, the guard UI displays \"Login Required\" (exact text) and provides a login action.",
-        "When authenticated but not admin, the guard UI displays \"Access Denied\" (exact text).",
-        "Admin-only routes remain inaccessible to non-admin users even if they try to navigate directly (e.g., #/admin/products)."
+        "When a logo is present in the backend, the header displays it reliably.",
+        "When no logo is present (or if the query fails), the header still renders a usable fallback (the existing static image and/or brand text) and does not break navigation.",
+        "Logo appearance remains in the header only (no other site areas are modified to show the logo)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "path": "frontend/src/components/layout/Header.tsx",
           "operation": "modify",
-          "description": "Update the guard UI strings to match exact required text (\"Login Required\" and \"Access Denied\"), keep the login action using the Internet Identity flow via the authorization component’s frontend pattern (useInternetIdentity + useIsCallerAdmin). Verify the component's usage instructions before implementing."
+          "description": "Update the Header logo block to use the new logo query hook to fetch the persisted logo and render it when available (converted via the shared logo helper). If no logo exists, while loading, or if the query fails, fall back to the current static logo image and existing brand text without affecting navigation. Keep all logo rendering confined to the Header only. (Verify the component's usage instructions before implementing.)"
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/utils/logo.ts",
           "operation": "modify",
-          "description": "Ensure the \"/owner\" alias and all admin product management routes remain wrapped in AdminRouteGuard so direct navigation stays protected."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Revise the admin products page to a responsive table with specified columns and an Add Product button above the table.",
-      "acceptanceCriteria": [
-        "Admin products page displays a table (not a card grid) with the specified columns.",
-        "Each row includes Edit and Delete actions.",
-        "An \"Add Product\" button is visible above the table.",
-        "Layout remains usable on mobile (table becomes stacked/scrollable appropriately)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminProductsPage.tsx",
-          "operation": "modify",
-          "description": "Replace the card grid with a responsive table layout that includes columns: Image, Product Name, Category, Price, Discount, Stock, Actions (Edit/Delete), and keep the Add Product button above the table; use existing shadcn-ui primitives already in the project where appropriate. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/index.css",
-          "operation": "modify",
-          "description": "Add minimal global utility styling (if needed) to support mobile table responsiveness (e.g., horizontal scroll container or stacked row labels) without introducing new global stylesheet paths."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Implement Add/Edit product modal form with validation and loading states, supporting category dropdown, JPEG upload, pricing/discount, stock, and optional variants (weight/type).",
-      "acceptanceCriteria": [
-        "Add/Edit opens in a modal dialog.",
-        "Form validation prevents submission when required fields are missing or invalid (e.g., negative price, invalid discount rules, invalid stock).",
-        "Image input only accepts JPEG and rejects other types in the UI.",
-        "Variant inputs can be left empty for single-price products, and can be provided for weight/type variant products.",
-        "Save action shows a loading state and is disabled while the mutation is pending."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminProductsPage.tsx",
-          "operation": "modify",
-          "description": "Refactor the modal form fields to match the requested workflow: Product Name, Category dropdown (Bee Products/Natural Honey/Raw Honey), JPEG-only file input that converts to a safe string representation for the product primary image, Price + optional Discount Price, Stock Quantity, and optional Variant Options (weight 250g/500g/1000g and type variants). Implement client-side validation and disable/indicate loading during save using existing shadcn-ui Dialog/form inputs. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Update product mutations to align with the current backendInterface typing: pass a single primary image string (not an images array) and include stock and optional variants in create/update calls; keep react-query invalidation behavior consistent."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Replace delete with a confirmation popup (not window.confirm), perform soft delete via backend calls, and show mutation errors via toast notifications.",
-      "acceptanceCriteria": [
-        "Deleting a product requires explicit confirmation in a modal/popup (not window.confirm).",
-        "Delete triggers a backend call that marks the product deleted (soft delete).",
-        "After deletion, the product disappears from public product listings and from the default admin list.",
-        "If a non-admin attempts any product mutation, the backend rejects it and the UI shows an error toast."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminProductsPage.tsx",
-          "operation": "modify",
-          "description": "Replace window.confirm with a shadcn-ui modal/popup confirmation (e.g., AlertDialog) before calling the delete mutation; keep success/error toast notifications (sonner) and ensure backend-rejection errors surface as error toasts. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/AdminRouteGuard.tsx",
-          "operation": "modify",
-          "description": "Ensure guard behavior and messaging remain consistent so non-admin users cannot access product management pages to initiate mutations (defense-in-depth alongside backend enforcement)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Add admin product list enhancements: search, category filter, total count display, and low-stock indicator with configurable threshold.",
-      "acceptanceCriteria": [
-        "Admin products page includes a search input that filters the currently loaded products.",
-        "Admin products page includes a category filter (All + each category).",
-        "UI shows total product count for the current filtered result set.",
-        "Products with stock at or below the chosen threshold are visually marked as low stock (e.g., badge/row highlight)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminProductsPage.tsx",
-          "operation": "modify",
-          "description": "Add client-side search (by product name/text), category filter (All + each category), a visible total count for the filtered results, and a configurable low-stock threshold control; visually mark low-stock rows/badges in the table using existing brand/shadcn-ui primitives. Verify the component's usage instructions before implementing."
+          "description": "Ensure the logo helper supports Header requirements: stable conversion for display, safe handling of missing/invalid bytes, and an API that keeps Header logic minimal. (Verify the component's usage instructions before implementing.)"
         }
       ]
     }

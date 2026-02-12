@@ -1,19 +1,17 @@
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
 import Order "mo:core/Order";
-import List "mo:core/List";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
-import Runtime "mo:core/Runtime";
 import Map "mo:core/Map";
+import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
+import List "mo:core/List";
+import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -101,6 +99,12 @@ actor {
     name : Text;
   };
 
+  // Logo Types
+  public type Logo = {
+    mimeType : Text;
+    data : [Nat8];
+  };
+
   let nextProductIdMap = Map.empty<Text, Nat>();
   var nextUpdateId = 0;
   var nextContactId = 0;
@@ -108,6 +112,25 @@ actor {
   let updates = Map.empty<Nat, ProductUpdate>();
   let contacts = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
+
+  // This flag ensures makeMeAdmin can only be called once (dev-only method!)
+  var devAdminGranted = false;
+
+  var logo : ?Logo = null;
+
+  // Dev-only Function: Grant admin rights (can be called only once total)
+  public shared ({ caller }) func makeMeAdmin() : async () {
+    if (devAdminGranted) {
+      Runtime.trap("Admin rights have already been granted. This function can only be called once total.");
+    };
+    AccessControl.assignRole(
+      accessControlState,
+      caller,
+      caller,
+      #admin,
+    );
+    devAdminGranted := true;
+  };
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
@@ -129,6 +152,21 @@ actor {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
+  };
+
+  // Logo Management (Admin-only)
+  public shared ({ caller }) func updateLogo(mimeType : Text, data : [Nat8]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update the logo");
+    };
+    if (mimeType == "" or data.size() == 0) {
+      Runtime.trap("Invalid logo data");
+    };
+    logo := ?{ mimeType; data };
+  };
+
+  public query ({ caller }) func getLogo() : async ?Logo {
+    logo;
   };
 
   // Product Management (Admin-only)

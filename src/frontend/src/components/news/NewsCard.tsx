@@ -19,7 +19,7 @@ export default function NewsCard({ update }: { update: ProductUpdate }) {
   const date = new Date(Number(update.timestamp) / 1000000);
 
   return (
-    <Link to="/news/$newsId" params={{ newsId: update.id.toString() }}>
+    <Link to="/news/$updateId" params={{ updateId: update.id.toString() }}>
       <Card className="hover:shadow-premium transition-all duration-300 cursor-pointer group h-full">
         <CardHeader>
           <div className="flex items-start justify-between gap-4 mb-2">

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Section, Container, BrandCard } from '../../components/brand/BrandPrimitives';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { Package, Newspaper, Settings } from 'lucide-react';
+import { Package, Newspaper, Settings, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AdminDashboardPage() {
@@ -62,6 +62,27 @@ export default function AdminDashboardPage() {
                   </div>
                   <Button className="mt-4 bg-primary hover:bg-primary/90">
                     Go to News
+                  </Button>
+                </div>
+              </BrandCard>
+            </Link>
+
+            <Link to="/admin/logo">
+              <BrandCard className="p-8 hover:shadow-premium transition-all cursor-pointer group h-full">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                    <Image className="h-8 w-8 text-secondary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold mb-2 group-hover:text-primary transition-colors">
+                      Manage Logo
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Upload and customize your site logo that appears in the header.
+                    </p>
+                  </div>
+                  <Button className="mt-4 bg-primary hover:bg-primary/90">
+                    Go to Logo
                   </Button>
                 </div>
               </BrandCard>

@@ -47,6 +47,10 @@ export interface ContactFormSubmission {
     message: string;
     timestamp: Time;
 }
+export interface Logo {
+    data: Uint8Array;
+    mimeType: string;
+}
 export interface Product {
     id: bigint;
     created: Time;
@@ -103,14 +107,17 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getContactFormSubmissions(): Promise<Array<ContactFormSubmission>>;
     getLimitedProducts(): Promise<Array<Product>>;
+    getLogo(): Promise<Logo | null>;
     getProduct(id: bigint): Promise<Product | null>;
     getProductUpdatesByProduct(productId: bigint): Promise<Array<ProductUpdate>>;
     getProductUpdatesByType(productUpdateType: ProductUpdateType): Promise<Array<ProductUpdate>>;
     getProductsByCategory(category: Category): Promise<Array<Product>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    makeMeAdmin(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     seedProducts(): Promise<SeedProductsResult>;
     submitContactForm(name: string, email: string, message: string): Promise<bigint>;
+    updateLogo(mimeType: string, data: Uint8Array): Promise<void>;
     updateProduct(id: bigint, name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<void>;
 }

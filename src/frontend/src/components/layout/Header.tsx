@@ -1,14 +1,27 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import LoginButton from '../auth/LoginButton';
-import { useIsCallerAdmin } from '../../hooks/useQueries';
+import { useIsCallerAdmin, useGetLogo } from '../../hooks/useQueries';
+import { logoToUrl, revokeLogoUrl } from '../../utils/logo';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { data: isAdmin } = useIsCallerAdmin();
+  const { data: logo } = useGetLogo();
+
+  const customLogoUrl = logoToUrl(logo);
+
+  // Clean up logo URL on unmount
+  useEffect(() => {
+    return () => {
+      if (customLogoUrl) {
+        revokeLogoUrl(customLogoUrl);
+      }
+    };
+  }, [customLogoUrl]);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -26,7 +39,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
             <img 
-              src="/assets/image-1.png" 
+              src={customLogoUrl || "/assets/image-1.png"}
               alt="Beemedha logo" 
               className="h-12 w-12 object-contain"
             />

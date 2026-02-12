@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants } from '../backend';
+import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants, Logo } from '../backend';
 import { useLiveUpdateConfig } from './useLiveUpdateConfig';
 
 // Products
@@ -314,5 +314,54 @@ export function useIsCallerAdmin() {
     },
     enabled: !!actor && !isFetching,
     retry: false,
+  });
+}
+
+// DEV ONLY: Make Me Admin
+export function useMakeMeAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.makeMeAdmin();
+    },
+    onSuccess: async () => {
+      // Invalidate and refetch admin status to allow immediate access
+      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
+      await queryClient.refetchQueries({ queryKey: ['isAdmin'] });
+    },
+  });
+}
+
+// Logo Management
+export function useGetLogo() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Logo | null>({
+    queryKey: ['logo'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getLogo();
+    },
+    enabled: !!actor && !isFetching,
+    retry: false,
+  });
+}
+
+export function useUpdateLogo() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { mimeType: string; data: Uint8Array }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateLogo(data.mimeType, data.data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['logo'] });
+      await queryClient.refetchQueries({ queryKey: ['logo'] });
+    },
   });
 }

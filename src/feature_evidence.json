@@ -2,32 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-dedicated-web-owner-admin-dashboard-entry-route-at-owner-or-make-owner-an-alias-to-the-existing-admin-dashboard-and-ensure-the-page-title-h1-and-document-title-are-web-owner-dashboard",
-      "featureTitle": "Add a dedicated Web Owner admin dashboard entry route at \"/owner\" (or make \"/owner\" an alias to the existing \"/admin\" dashboard) and ensure the page title (H1) and document title are \"Web Owner Dashboard\".",
+      "featureId": "feature-add-react-query-hooks-for-reading-and-updating-the-site-logo-via-the-backend-actor-query-for-current-logo-mutation-for-uploading-replacing-logo-and-ensure-cache-invalidation-refetch-occurs-after-a-successful-upload-so-the-ui-updates-immediately",
+      "featureTitle": "Add React Query hooks for reading and updating the site logo via the backend actor (query for current logo; mutation for uploading/replacing logo), and ensure cache invalidation/refetch occurs after a successful upload so the UI updates immediately.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/usePageMeta.ts",
-        "frontend/src/pages/admin/AdminDashboardPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-enforce-access-control-for-the-web-owner-dashboard-and-product-management-pages-using-internet-identity-authentication-and-admin-verification-via-the-existing-useiscalleradmin-hook-unauthenticated-users-must-see-login-required-and-non-admin-users-must-see-access-denied",
-      "featureTitle": "Enforce access control for the Web Owner dashboard and product management pages using Internet Identity authentication and admin verification via the existing useIsCallerAdmin() hook; unauthenticated users must see \"Login Required\" and non-admin users must see \"Access Denied\".",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/admin/AdminRouteGuard.tsx"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/logo.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -43,10 +22,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-revise-the-admin-product-management-ui-to-match-the-requested-dashboard-table-layout-show-product-list-in-a-responsive-table-with-columns-image-product-name-category-price-discount-stock-actions-edit-delete-and-an-add-product-button-at-the-top",
-      "featureTitle": "Revise the admin product management UI to match the requested dashboard/table layout: show product list in a responsive table with columns Image, Product Name, Category, Price, Discount, Stock, Actions (Edit/Delete), and an \"Add Product\" button at the top.",
+      "featureId": "feature-create-an-admin-only-ui-page-accessible-from-the-existing-admin-dashboard-that-allows-an-admin-to-upload-replace-the-website-logo-from-within-the-site-file-picker-basic-client-side-validation-and-a-preview-of-the-currently-saved-logo",
+      "featureTitle": "Create an admin-only UI page accessible from the existing admin dashboard that allows an admin to upload/replace the website logo from within the site (file picker, basic client-side validation, and a preview of the currently saved logo).",
       "files": [
-        "frontend/src/pages/admin/AdminProductsPage.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/pages/admin/AdminDashboardPage.tsx",
+        "frontend/src/pages/admin/AdminLogoPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -57,16 +38,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-5"
+        "REQ-3"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-add-edit-product-workflows-using-a-modal-form-with-validation-and-loading-states-supporting-fields-product-name-category-dropdown-bee-products-natural-honey-raw-honey-jpeg-image-upload-price-discount-price-optional-stock-quantity-and-variant-options-optional-weight-variants-250g-500g-1000g-type-variants-such-as-multiflora-raw-unprocessed-etc",
-      "featureTitle": "Implement Add/Edit product workflows using a modal form with validation and loading states, supporting fields: Product Name, Category dropdown (Bee Products, Natural Honey, Raw Honey), JPEG image upload, Price, Discount Price (optional), Stock Quantity, and Variant Options (optional: weight variants 250g/500g/1000g; type variants such as \"MULTIFLORA\" / \"Raw & Unprocessed\" etc.).",
+      "featureId": "feature-update-the-site-header-to-render-the-persisted-logo-from-the-backend-when-available-and-fall-back-to-the-existing-static-logo-behavior-when-no-uploaded-logo-exists-or-while-loading-fails-keep-logo-placement-in-the-header-only",
+      "featureTitle": "Update the site Header to render the persisted logo from the backend (when available) and fall back to the existing static logo behavior when no uploaded logo exists or while loading fails; keep logo placement in the header only.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminProductsPage.tsx"
+        "frontend/src/components/layout/Header.tsx",
+        "frontend/src/utils/logo.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -77,46 +58,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-6"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-replace-product-deletion-with-a-confirmation-popup-and-perform-a-soft-delete-preferred-through-secure-admin-only-backend-calls-ensure-non-admin-users-cannot-modify-products-and-surface-errors-via-toast-notifications",
-      "featureTitle": "Replace product deletion with a confirmation popup and perform a soft delete (preferred) through secure admin-only backend calls; ensure non-admin users cannot modify products and surface errors via toast notifications.",
-      "files": [
-        "frontend/src/components/admin/AdminRouteGuard.tsx",
-        "frontend/src/pages/admin/AdminProductsPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-7"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-admin-product-list-enhancements-bonus-search-by-product-name-text-filter-by-category-show-total-product-count-and-display-a-low-stock-alert-indicator-based-on-a-configurable-threshold",
-      "featureTitle": "Add admin product list enhancements (bonus): search by product name/text, filter by category, show total product count, and display a low-stock alert indicator based on a configurable threshold.",
-      "files": [
-        "frontend/src/pages/admin/AdminProductsPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-8"
+        "REQ-4"
       ],
       "confidence": "high"
     }
