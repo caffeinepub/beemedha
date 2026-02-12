@@ -72,6 +72,7 @@ export interface WeightVariant {
 }
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addAdmin' : ActorMethod<[Principal], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createProduct' : ActorMethod<
     [
@@ -108,7 +109,8 @@ export interface _SERVICE {
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'makeMeAdmin' : ActorMethod<[], undefined>,
+  'listAdmins' : ActorMethod<[], Array<Principal>>,
+  'removeAdmin' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'seedProducts' : ActorMethod<[], SeedProductsResult>,
   'submitContactForm' : ActorMethod<[string, string, string], bigint>,

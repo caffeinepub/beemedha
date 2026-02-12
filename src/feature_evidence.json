@@ -2,32 +2,13 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-react-query-hooks-for-reading-and-updating-the-site-logo-via-the-backend-actor-query-for-current-logo-mutation-for-uploading-replacing-logo-and-ensure-cache-invalidation-refetch-occurs-after-a-successful-upload-so-the-ui-updates-immediately",
-      "featureTitle": "Add React Query hooks for reading and updating the site logo via the backend actor (query for current logo; mutation for uploading/replacing logo), and ensure cache invalidation/refetch occurs after a successful upload so the UI updates immediately.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/utils/logo.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-create-an-admin-only-ui-page-accessible-from-the-existing-admin-dashboard-that-allows-an-admin-to-upload-replace-the-website-logo-from-within-the-site-file-picker-basic-client-side-validation-and-a-preview-of-the-currently-saved-logo",
-      "featureTitle": "Create an admin-only UI page accessible from the existing admin dashboard that allows an admin to upload/replace the website logo from within the site (file picker, basic client-side validation, and a preview of the currently saved logo).",
+      "featureId": "feature-restrict-access-to-the-admin-access-management-route-admin-access-so-it-can-only-be-viewed-used-by-the-owner-s-internet-identity-principal-zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe-self-only-access-even-if-other-principals-are-admins",
+      "featureTitle": "Restrict access to the Admin Access management route (/admin/access) so it can only be viewed/used by the owner’s Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" (self-only access), even if other principals are admins.",
       "files": [
         "frontend/src/App.tsx",
-        "frontend/src/pages/admin/AdminDashboardPage.tsx",
-        "frontend/src/pages/admin/AdminLogoPage.tsx"
+        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
+        "frontend/src/config/owner.ts",
+        "frontend/src/pages/admin/AdminDashboardPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,27 +19,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-site-header-to-render-the-persisted-logo-from-the-backend-when-available-and-fall-back-to-the-existing-static-logo-behavior-when-no-uploaded-logo-exists-or-while-loading-fails-keep-logo-placement-in-the-header-only",
-      "featureTitle": "Update the site Header to render the persisted logo from the backend (when available) and fall back to the existing static logo behavior when no uploaded logo exists or while loading fails; keep logo placement in the header only.",
-      "files": [
-        "frontend/src/components/layout/Header.tsx",
-        "frontend/src/utils/logo.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "confidence": "high"
     }

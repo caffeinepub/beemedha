@@ -14,7 +14,9 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminNewsPage from './pages/admin/AdminNewsPage';
 import AdminLogoPage from './pages/admin/AdminLogoPage';
+import AdminAccessPage from './pages/admin/AdminAccessPage';
 import AdminRouteGuard from './components/admin/AdminRouteGuard';
+import OwnerOnlyRouteGuard from './components/admin/OwnerOnlyRouteGuard';
 
 const rootRoute = createRootRoute({
   component: SiteLayout,
@@ -124,6 +126,16 @@ const adminLogoRoute = createRoute({
   ),
 });
 
+const adminAccessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/access',
+  component: () => (
+    <OwnerOnlyRouteGuard>
+      <AdminAccessPage />
+    </OwnerOnlyRouteGuard>
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   aboutRoute,
@@ -139,6 +151,7 @@ const routeTree = rootRoute.addChildren([
   adminProductsRoute,
   adminNewsRoute,
   adminLogoRoute,
+  adminAccessRoute,
 ]);
 
 const hashHistory = createHashHistory();

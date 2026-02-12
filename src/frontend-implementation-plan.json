@@ -1,73 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin-only persistent logo upload with header rendering (frontend)",
+  "title": "Owner-only access restriction for Admin Access route",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Add React Query hooks to fetch and update the persisted site logo and refresh cached logo data after upload.",
+      "id": "REQ-1",
+      "summary": "Restrict /admin/access to the single owner Internet Identity principal with a login-required flow and explicit Access Denied UI for all others (including admins).",
       "acceptanceCriteria": [
-        "A hook exists to fetch the current logo and exposes loading/error states.",
-        "A hook exists to upload/replace the logo and on success invalidates/refetches the logo query so other components can update without a manual refresh.",
-        "If the actor is unavailable, the hooks do not crash the app and behave consistently with existing hooks’ patterns in the project."
+        "When logged in as principal zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe, navigating to /#/admin/access renders the existing AdminAccessPage UI.",
+        "When logged in as any other principal, navigating to /#/admin/access shows an explicit Access Denied experience (not the admin management UI), even if that principal would otherwise pass the generic admin check.",
+        "When not logged in, /#/admin/access prompts the user to log in with Internet Identity, and after login still enforces the owner-principal restriction."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add React Query hooks for logo read/write: a query hook (e.g., useGetLogo) that calls the backend actor getLogo and returns null/empty states safely when actor is unavailable; and a mutation hook (e.g., useUpdateLogo) that calls updateLogo(mimeType, data) and on success invalidates/refetches the ['logo'] query key so the UI updates immediately. Align enabled/retry behavior with existing hooks patterns. (Authorization component context: hooks will be used within admin-guarded UI flows; verify the component's usage instructions before implementing.)"
+          "path": "frontend/src/config/owner.ts",
+          "operation": "create",
+          "description": "Add a single source of truth for the owner principal string (zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe) and a small helper to compare the current authenticated principal string to the owner. Verify the component's usage instructions before implementing (authorization: frontend auth/access-control guidance)."
         },
         {
-          "path": "frontend/src/utils/logo.ts",
+          "path": "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
           "operation": "create",
-          "description": "Create a small helper to convert the backend Logo (mimeType + Uint8Array bytes) into a browser-renderable URL (e.g., data URL) and/or object URL, suitable for use in the Header and admin preview. Ensure it handles null/empty data robustly. (Verify the component's usage instructions before implementing.)"
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Create an admin-only page reachable from the admin dashboard to upload/replace the logo with validation and preview.",
-      "acceptanceCriteria": [
-        "The page is protected by the existing AdminRouteGuard (non-admin users cannot access it).",
-        "The page includes a file input restricted to common image formats and shows a clear error message for invalid selections (e.g., non-image file).",
-        "After a successful upload, the page shows the newly saved logo without requiring a full page reload."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminLogoPage.tsx",
-          "operation": "create",
-          "description": "Implement an admin-only logo management page UI: show current saved logo preview using the logo query hook; provide a file picker restricted to common image formats (via accept and client-side MIME checks), show clear English validation errors (e.g., non-image), and on submit read bytes (ArrayBuffer->Uint8Array) and call the update logo mutation. On success, rely on query invalidation/refetch to re-render the new preview without full reload. Use existing authorization patterns (AdminRouteGuard + isCallerAdmin) and handle authorization failures gracefully. (Verify the component's usage instructions before implementing.)"
+          "description": "Create an owner-only route guard for /admin/access that uses the immutable useInternetIdentity hook to (1) prompt login when not authenticated, (2) show an explicit Access Denied screen when authenticated but not the owner principal, and (3) render children only for the owner principal. Ensure all user-facing text is English. Verify the component's usage instructions before implementing (authorization: show AccessDeniedScreen for unauthorized users; handle auth state correctly)."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Register a new guarded admin route (e.g., /admin/logo) that renders AdminLogoPage inside the existing AdminRouteGuard, ensuring it is navigable and not an orphan view. (Authorization component context: AdminRouteGuard is part of the role-based access control flow; verify the component's usage instructions before implementing.)"
+          "description": "Wire the new OwnerOnlyRouteGuard into routing by wrapping the existing /admin/access route with it (replacing the current AdminRouteGuard wrapper for this route only). Keep all other admin routes unchanged. Verify the component's usage instructions before implementing (authorization: frontend auth/access-control guidance)."
         },
         {
           "path": "frontend/src/pages/admin/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Add a new navigation card/link from the existing admin dashboard to the new logo management page route (e.g., /admin/logo), keeping copy in English and consistent with existing dashboard cards. (Verify the component's usage instructions before implementing.)"
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Render the persisted logo in the Header with a safe fallback to the existing static logo behavior.",
-      "acceptanceCriteria": [
-        "When a logo is present in the backend, the header displays it reliably.",
-        "When no logo is present (or if the query fails), the header still renders a usable fallback (the existing static image and/or brand text) and does not break navigation.",
-        "Logo appearance remains in the header only (no other site areas are modified to show the logo)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/layout/Header.tsx",
-          "operation": "modify",
-          "description": "Update the Header logo block to use the new logo query hook to fetch the persisted logo and render it when available (converted via the shared logo helper). If no logo exists, while loading, or if the query fails, fall back to the current static logo image and existing brand text without affecting navigation. Keep all logo rendering confined to the Header only. (Verify the component's usage instructions before implementing.)"
-        },
-        {
-          "path": "frontend/src/utils/logo.ts",
-          "operation": "modify",
-          "description": "Ensure the logo helper supports Header requirements: stable conversion for display, safe handling of missing/invalid bytes, and an API that keeps Header logic minimal. (Verify the component's usage instructions before implementing.)"
+          "description": "Use the immutable useInternetIdentity hook plus the shared owner principal helper to hide/disable the 'Admin Access' navigation card for non-owner admins (optional UX hardening), while leaving the route enforcement to the guard. Keep all text in English. Verify the component's usage instructions before implementing (authorization: access-control UI guidance)."
         }
       ]
     }

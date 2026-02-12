@@ -1,108 +1,61 @@
 {
   "kind": "build_request",
-  "title": "Admin-only website logo upload stored persistently and used in header",
+  "title": "Restrict Admin Access management page to a single owner principal",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add backend support for storing a single site logo in canister state, including: (a) an admin-only update method to set/replace the logo (image bytes + MIME type), (b) a public query method to fetch the current logo, and (c) persistence across canister upgrades (so the logo survives redeploys/upgrades).",
-      "target": "backend",
+      "text": "Restrict access to the Admin Access management route (/admin/access) so it can only be viewed/used by the owner’s Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" (self-only access), even if other principals are admins.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-build-it"
+          "recent-8",
+          "recent-10"
         ],
         "quotes": [
-          "can i change logo with website with admin login",
-          "2 yes",
-          "build it"
+          "make it accessed by myself only",
+          "1. Do you want me to build the admin‑management page so you can add that principal as an admin ,can be accessed by myself only"
         ]
       },
       "acceptanceCriteria": [
-        "Calling the set/replace logo method traps with an authorization error when the caller is not an admin.",
-        "After setting a logo, the query method returns the stored MIME type and bytes.",
-        "After an upgrade/redeploy that preserves stable memory, the previously uploaded logo is still returned by the query method."
+        "When logged in as principal zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe, navigating to /#/admin/access renders the existing AdminAccessPage UI.",
+        "When logged in as any other principal, navigating to /#/admin/access shows an explicit Access Denied experience (not the admin management UI), even if that principal would otherwise pass the generic admin check.",
+        "When not logged in, /#/admin/access prompts the user to log in with Internet Identity, and after login still enforces the owner-principal restriction."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add React Query hooks for reading and updating the site logo via the backend actor (query for current logo; mutation for uploading/replacing logo), and ensure cache invalidation/refetch occurs after a successful upload so the UI updates immediately.",
-      "target": "frontend",
+      "text": "Enforce the same self-only access control on the backend admin-management APIs used by the Admin Access page (listAdmins, addAdmin, removeAdmin), allowing calls only when caller is the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\".",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-build-it"
+          "recent-8",
+          "recent-10"
         ],
         "quotes": [
-          "build it"
+          "make it accessed by myself only",
+          "1. Do you want me to build the admin‑management page so you can add that principal as an admin ,can be accessed by myself only"
         ]
       },
       "acceptanceCriteria": [
-        "A hook exists to fetch the current logo and exposes loading/error states.",
-        "A hook exists to upload/replace the logo and on success invalidates/refetches the logo query so other components can update without a manual refresh.",
-        "If the actor is unavailable, the hooks do not crash the app and behave consistently with existing hooks’ patterns in the project."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Create an admin-only UI page accessible from the existing admin dashboard that allows an admin to upload/replace the website logo from within the site (file picker, basic client-side validation, and a preview of the currently saved logo).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-build-it"
-        ],
-        "quotes": [
-          "can i change logo with website with admin login",
-          "yes",
-          "build it"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The page is protected by the existing AdminRouteGuard (non-admin users cannot access it).",
-        "The page includes a file input restricted to common image formats and shows a clear error message for invalid selections (e.g., non-image file).",
-        "After a successful upload, the page shows the newly saved logo without requiring a full page reload."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Update the site Header to render the persisted logo from the backend (when available) and fall back to the existing static logo behavior when no uploaded logo exists or while loading fails; keep logo placement in the header only.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-build-it"
-        ],
-        "quotes": [
-          "why does the logo is removed",
-          "build it"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When a logo is present in the backend, the header displays it reliably.",
-        "When no logo is present (or if the query fails), the header still renders a usable fallback (the existing static image and/or brand text) and does not break navigation.",
-        "Logo appearance remains in the header only (no other site areas are modified to show the logo)."
+        "Calling listAdmins/addAdmin/removeAdmin as the owner principal succeeds (subject to existing validation like preventing anonymous principals and preventing self-removal).",
+        "Calling listAdmins/addAdmin/removeAdmin as any non-owner principal traps/rejects with an unauthorized error.",
+        "Other existing backend APIs and admin functionality behavior remains unchanged."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
-    "Do not modify files under frontend/src/components/ui or any frontend paths listed as immutable in SYSTEM_CONTEXT.",
-    "Use English for any user-facing text."
+    "Frontend files under frontend/src/components/ui and the Internet Identity/actor hooks under frontend/src/hooks/useInternetIdentity.ts(x) and frontend/src/hooks/useActor.ts are immutable and must not be edited.",
+    "Keep the backend as a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if a state upgrade is required (not expected for this change unless new stable state is introduced).",
+    "All user-facing text must be in English."
   ],
   "nonGoals": [
-    "Adding third-party authentication (only Internet Identity is used).",
-    "Adding real-time updates via websockets or push notifications.",
-    "Implementing logo placement across additional pages/areas beyond the header."
+    "Do not add third-party authentication providers; only Internet Identity is used.",
+    "Do not add new admin features beyond restricting access to the existing Admin Access page and its related backend APIs.",
+    "Do not redesign unrelated admin routes (/admin, /admin/products, /admin/news, /admin/logo) unless required to implement the self-only restriction for /admin/access."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

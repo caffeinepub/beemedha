@@ -1,16 +1,18 @@
 import Array "mo:core/Array";
-import Order "mo:core/Order";
-import Text "mo:core/Text";
-import Time "mo:core/Time";
+import List "mo:core/List";
 import Map "mo:core/Map";
+import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Int "mo:core/Int";
+import Order "mo:core/Order";
+import Text "mo:core/Text";
 import Nat "mo:core/Nat";
-import List "mo:core/List";
 import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+
+
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -95,11 +97,16 @@ actor {
     timestamp : Time.Time;
   };
 
+  public type UserRole = {
+    #guest;
+    #user;
+    #admin;
+  };
+
   public type UserProfile = {
     name : Text;
   };
 
-  // Logo Types
   public type Logo = {
     mimeType : Text;
     data : [Nat8];
@@ -113,29 +120,68 @@ actor {
   let contacts = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
-  // This flag ensures makeMeAdmin can only be called once (dev-only method!)
-  var devAdminGranted = false;
-
   var logo : ?Logo = null;
 
-  // Dev-only Function: Grant admin rights (can be called only once total)
-  public shared ({ caller }) func makeMeAdmin() : async () {
-    if (devAdminGranted) {
-      Runtime.trap("Admin rights have already been granted. This function can only be called once total.");
+  // Track admins for listing purposes
+  let adminPrincipals = Map.empty<Principal, Bool>();
+
+  // Strict owner check for admin management
+  func adminOnlyCheck(caller : Principal) {
+    let owner : Principal = Principal.fromText("zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe");
+    if (caller != owner) {
+      Runtime.trap("Unauthorized: Only the smart contract owner can perform this action");
     };
-    AccessControl.assignRole(
-      accessControlState,
-      caller,
-      caller,
-      #admin,
-    );
-    devAdminGranted := true;
+  };
+
+  // Admin Management APIs
+  public query ({ caller }) func listAdmins() : async [Principal] {
+    adminOnlyCheck(caller);
+    adminPrincipals.keys().toArray();
+  };
+
+  public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
+    adminOnlyCheck(caller);
+
+    // Prevent adding anonymous principal as admin
+    if (newAdmin.isAnonymous()) {
+      Runtime.trap("Cannot add anonymous principal as admin");
+    };
+
+    // Check if already an admin
+    if (AccessControl.isAdmin(accessControlState, newAdmin)) {
+      Runtime.trap("Principal is already an admin");
+    };
+
+    AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
+
+    // Track in our admin list
+    adminPrincipals.add(newAdmin, true);
+  };
+
+  public shared ({ caller }) func removeAdmin(adminToRemove : Principal) : async () {
+    adminOnlyCheck(caller);
+
+    // Prevent removing self
+    if (caller == adminToRemove) {
+      Runtime.trap("Cannot remove yourself as admin");
+    };
+
+    // Check if the target is actually an admin
+    if (not (AccessControl.isAdmin(accessControlState, adminToRemove))) {
+      Runtime.trap("Principal is not an admin");
+    };
+
+    // Demote to user role
+    AccessControl.assignRole(accessControlState, caller, adminToRemove, #user);
+
+    // Remove from admin tracking
+    adminPrincipals.remove(adminToRemove);
   };
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
+      Runtime.trap("Unauthorized: Only users can access profiles");
     };
     userProfiles.get(caller);
   };
@@ -157,7 +203,7 @@ actor {
   // Logo Management (Admin-only)
   public shared ({ caller }) func updateLogo(mimeType : Text, data : [Nat8]) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can update the logo");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     if (mimeType == "" or data.size() == 0) {
       Runtime.trap("Invalid logo data");
@@ -181,8 +227,9 @@ actor {
     stock : Nat,
   ) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can create products");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+
     let productId = products.size();
     let timestamp = Time.now();
     let product = {
@@ -199,6 +246,7 @@ actor {
       stock;
       isDeleted = false;
     };
+
     products.add(productId, product);
     productId;
   };
@@ -215,8 +263,9 @@ actor {
     stock : Nat,
   ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can update products");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+
     let product = switch (products.get(id)) {
       case (null) { Runtime.trap("Product not found") };
       case (?p) { p };
@@ -236,13 +285,15 @@ actor {
       stock;
       isDeleted = false;
     };
+
     products.add(id, updatedProduct);
   };
 
   public shared ({ caller }) func deleteProduct(id : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can delete products");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+
     let product = switch (products.get(id)) {
       case (null) { Runtime.trap("Product not found") };
       case (?p) { p };
@@ -263,8 +314,9 @@ actor {
     message : Text,
   ) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can create product updates");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+
     let updateId = nextUpdateId;
     nextUpdateId += 1;
     let update = {
@@ -275,13 +327,15 @@ actor {
       timestamp = Time.now();
     };
     updates.add(updateId, update);
+
     updateId;
   };
 
   public shared ({ caller }) func deleteProductUpdate(id : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can delete product updates");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+
     switch (updates.get(id)) {
       case (null) { Runtime.trap("Product update not found") };
       case (?_) { updates.remove(id) };
@@ -300,19 +354,14 @@ actor {
       timestamp = Time.now();
     };
     contacts.add(contactId, submission);
+
     contactId;
   };
 
-  // Helper function to filter deleted products for non-admin users
   func filterDeletedProducts(caller : Principal, product : Product) : Bool {
-    if (AccessControl.isAdmin(accessControlState, caller)) {
-      true; // Admins can see all products including deleted ones
-    } else {
-      not product.isDeleted; // Non-admins only see non-deleted products
-    };
+    AccessControl.isAdmin(accessControlState, caller) or not product.isDeleted
   };
 
-  // Public Query Functions (Filter deleted products for non-admins)
   public query ({ caller }) func getProduct(id : Nat) : async ?Product {
     switch (products.get(id)) {
       case (null) { null };
@@ -362,7 +411,6 @@ actor {
     );
   };
 
-  // Public Query for Limited Products (Filter deleted products)
   public query ({ caller }) func getLimitedProducts() : async [Product] {
     products.values().toArray().filter(
       func(product) {
@@ -371,10 +419,9 @@ actor {
     );
   };
 
-  // Admin-only Query Functions
   public query ({ caller }) func getContactFormSubmissions() : async [ContactFormSubmission] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can view contact form submissions");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     contacts.values().toArray();
   };
@@ -384,10 +431,9 @@ actor {
     #alreadySeeded;
   };
 
-  // Seed Products (Admin-only, idempotent)
   public shared ({ caller }) func seedProducts() : async SeedProductsResult {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can seed products");
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     seedProductsInternal();
   };
@@ -397,7 +443,6 @@ actor {
 
     let now = Time.now();
 
-    // Lip Balm Product
     let lipBalm : Product = {
       id = 0;
       name = "Lip Balm";
@@ -413,7 +458,6 @@ actor {
       isDeleted = false;
     };
 
-    // Beeswax Product
     let beeswax : Product = {
       id = 1;
       name = "Beeswax";
@@ -462,7 +506,6 @@ actor {
       isDeleted = false;
     };
 
-    // Raw Honey Product with Flavor Variants
     let rawHoneyVariants : [FlavorVariant] = [
       {
         flavor = "Raw Forest";
@@ -507,3 +550,4 @@ actor {
     #seeded { count = 4 };
   };
 };
+

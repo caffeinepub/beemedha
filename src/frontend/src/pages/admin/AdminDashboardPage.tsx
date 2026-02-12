@@ -1,11 +1,17 @@
 import { Link } from '@tanstack/react-router';
 import { Section, Container, BrandCard } from '../../components/brand/BrandPrimitives';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { Package, Newspaper, Settings, Image } from 'lucide-react';
+import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { Package, Newspaper, Settings, Image, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isOwnerPrincipal } from '../../config/owner';
 
 export default function AdminDashboardPage() {
   usePageMeta('Web Owner Dashboard', 'Manage your Beemedha products and content.');
+
+  const { identity } = useInternetIdentity();
+  const userPrincipal = identity?.getPrincipal().toString();
+  const isOwner = isOwnerPrincipal(userPrincipal);
 
   return (
     <div>
@@ -87,6 +93,48 @@ export default function AdminDashboardPage() {
                 </div>
               </BrandCard>
             </Link>
+
+            {isOwner ? (
+              <Link to="/admin/access">
+                <BrandCard className="p-8 hover:shadow-premium transition-all cursor-pointer group h-full">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                      <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-serif font-bold mb-2 group-hover:text-primary transition-colors">
+                        Admin Access
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Manage administrator principals and access control.
+                      </p>
+                    </div>
+                    <Button className="mt-4 bg-primary hover:bg-primary/90">
+                      Manage Access
+                    </Button>
+                  </div>
+                </BrandCard>
+              </Link>
+            ) : (
+              <BrandCard className="p-8 h-full opacity-50 cursor-not-allowed">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold mb-2">
+                      Admin Access
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                      Owner-only access. Manage administrator principals and access control.
+                    </p>
+                  </div>
+                  <Button disabled className="mt-4">
+                    Owner Only
+                  </Button>
+                </div>
+              </BrandCard>
+            )}
           </div>
 
           <div className="mt-12 max-w-2xl mx-auto">

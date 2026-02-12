@@ -1,36 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project now includes an admin-facing capability to change the website logo by uploading it from within the site, with the uploaded logo stored persistently in the backend.",
+  "summary": "Build an admin-management page for the app, restricted so only the user's Internet Identity principal can access it.",
   "architectural_notes": [
-    "Need backend persistent storage for uploaded logo and an admin-only UI flow to upload/update it."
+    "Restrict admin-management page access via Internet Identity principal allowlist (self-only)."
   ],
-  "known_issues": [
-    "Site logo missing: Header component no longer references a logo image path, so only text renders."
-  ],
+  "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-react-query-hooks-for-reading-and-updating-the-site-logo-via-the-backend-actor-query-for-current-logo-mutation-for-uploading-replacing-logo-and-ensure-cache-invalidation-refetch-occurs-after-a-successful-upload-so-the-ui-updates-immediately",
-      "title": "Add React Query hooks for reading and updating the site logo via the backend actor (query for current logo; mutation for uploading/replacing logo), and ensure cache invalidation/refetch occurs after a successful upload so the UI updates immediately.",
+      "id": "feature-restrict-access-to-the-admin-access-management-route-admin-access-so-it-can-only-be-viewed-used-by-the-owner-s-internet-identity-principal-zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe-self-only-access-even-if-other-principals-are-admins",
+      "title": "Restrict access to the Admin Access management route (/admin/access) so it can only be viewed/used by the owner’s Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" (self-only access), even if other principals are admins.",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-an-admin-only-ui-page-accessible-from-the-existing-admin-dashboard-that-allows-an-admin-to-upload-replace-the-website-logo-from-within-the-site-file-picker-basic-client-side-validation-and-a-preview-of-the-currently-saved-logo",
-      "title": "Create an admin-only UI page accessible from the existing admin dashboard that allows an admin to upload/replace the website logo from within the site (file picker, basic client-side validation, and a preview of the currently saved logo).",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-site-header-to-render-the-persisted-logo-from-the-backend-when-available-and-fall-back-to-the-existing-static-logo-behavior-when-no-uploaded-logo-exists-or-while-loading-fails-keep-logo-placement-in-the-header-only",
-      "title": "Update the site Header to render the persisted logo from the backend (when available) and fall back to the existing static logo behavior when no uploaded logo exists or while loading fails; keep logo placement in the header only.",
-      "reqIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "version": 1
     }
@@ -38,20 +20,20 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Admin-only logo upload/change via website UI, stored persistently in backend (persists across redeploys)",
+      "summary": "Admin-management page that only the user's Internet Identity principal can access (self-only access control)",
       "reqIds": [],
       "status": "pending"
     },
     {
-      "id": "AR-2",
-      "summary": "Add backend support for storing a single site logo in canister state, including: (a) an admin-only update method to set/replace the logo (image bytes + MIME type), (b) a public query method to fetch the current logo, and (c) persistence across canister upgrades (so the logo survives redeploys/upgrades).",
+      "id": "AR-3",
+      "summary": "Enforce the same self-only access control on the backend admin-management APIs used by the Admin Access page (listAdmins, addAdmin, removeAdmin), allowing calls only when caller is the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\".",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Admin-only website logo upload stored persistently and used in header",
+  "projectName": "Restrict Admin Access management page to a single owner principal",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

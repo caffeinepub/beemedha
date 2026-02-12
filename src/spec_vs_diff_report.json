@@ -1,32 +1,31 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T13:20:41.149Z",
-  "summary": "Logo upload/admin page, frontend logo utility, header rendering of fetched logo, and routing to an admin logo page were added. Backend shows new Logo type and in-memory `var logo : ?Logo`, plus a stub for `updateLogo`, but the diff excerpt does not provide evidence of stable persistence or the required public query method implementation.",
+  "generatedAt": "2026-02-12T17:42:51.438Z",
+  "summary": "REQ-1 and REQ-2 appear largely implemented: /admin/access is now wrapped with an owner-only route guard that shows login-required vs access-denied vs the real page, and backend admin-management APIs now enforce an owner-principal check. However, the diff also introduces an unrequested /owner route and includes user-facing copy suggesting Google sign-in, which conflicts with the non-goal of not adding third-party auth providers. There is also a potential behavior change in listAdmins due to a new, non-stable tracking map that may omit pre-existing admins.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Persist the uploaded logo across canister upgrades (stable memory) and expose a public query method to fetch the current logo (mimeType + bytes), with admin-only update that traps for non-admins.",
-      "reason": "The backend diff shows `var logo : ?Logo = null;` and a truncated `updateLogo` signature, but does not show any `stable` storage / `preupgrade` / `postupgrade` logic, nor a `query getLogo` method, nor the explicit admin authorization trap in `updateLogo`.",
+      "id": "REQ-2",
+      "requirement": "Other existing backend APIs and admin functionality behavior remains unchanged.",
+      "reason": "The backend now uses a new in-memory `adminPrincipals` map for `listAdmins()` that is only populated on `addAdmin()`. This may change behavior by not listing admins that were already present in `accessControlState` before this tracking was introduced (and it is not shown as stable/persisted).",
       "evidence": [
-        "backend/main.mo (truncated: shows `var logo : ?Logo = null;` and `public shared ({ caller }) func updateLogo...` but no stable/persistence or `getLogo` query visible)"
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Newsletter signup functionality in the Footer (email validation, submit handling, toast notifications).",
-      "reason": "Not requested by any REQ; the BuildRequest is specifically about admin-only logo upload and header rendering.",
+      "description": "Introduced an unrequested /owner route that renders the admin dashboard.",
+      "reason": "BuildRequest only asks to restrict /admin/access; no new routes were requested.",
       "evidence": [
-        "frontend/src/components/layout/Footer.tsx (newsletter form logic, toasts)"
+        "frontend/src/App.tsx"
       ]
     },
     {
-      "description": "News UI refactors/changes (badge mapping, NewsCard and NewsDetailPage updates).",
-      "reason": "Not part of the logo upload/header scope; these modify news-related pages/components beyond the requested changes.",
+      "description": "User-facing login prompt mentions Google sign-in within Internet Identity flow.",
+      "reason": "Non-goals state not to add third-party authentication providers; while this may be informational copy, it explicitly introduces/advertises Google sign-in.",
       "evidence": [
-        "frontend/src/components/news/NewsCard.tsx",
-        "frontend/src/pages/NewsDetailPage.tsx"
+        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx"
       ]
     }
   ],
@@ -35,14 +34,9 @@
     "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/layout/Footer.tsx",
-    "frontend/src/components/layout/Header.tsx",
-    "frontend/src/components/news/NewsCard.tsx",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/NewsDetailPage.tsx",
+    "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
+    "frontend/src/config/owner.ts",
     "frontend/src/pages/admin/AdminDashboardPage.tsx",
-    "frontend/src/pages/admin/AdminLogoPage.tsx",
-    "frontend/src/utils/logo.ts",
     "project_state.json"
   ]
 }

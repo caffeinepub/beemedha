@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants, Logo } from '../backend';
 import { useLiveUpdateConfig } from './useLiveUpdateConfig';
+import { Principal } from '@dfinity/principal';
 
 // Products
 export function useGetAllProducts() {
@@ -317,20 +318,49 @@ export function useIsCallerAdmin() {
   });
 }
 
-// DEV ONLY: Make Me Admin
-export function useMakeMeAdmin() {
+// Admin Management
+export function useListAdmins() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Principal[]>({
+    queryKey: ['admins'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.listAdmins();
+    },
+    enabled: !!actor && !isFetching,
+    retry: false,
+  });
+}
+
+export function useAddAdmin() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (principal: Principal) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.makeMeAdmin();
+      return actor.addAdmin(principal);
     },
     onSuccess: async () => {
-      // Invalidate and refetch admin status to allow immediate access
-      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
-      await queryClient.refetchQueries({ queryKey: ['isAdmin'] });
+      await queryClient.invalidateQueries({ queryKey: ['admins'] });
+      await queryClient.refetchQueries({ queryKey: ['admins'] });
+    },
+  });
+}
+
+export function useRemoveAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (principal: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.removeAdmin(principal);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admins'] });
+      await queryClient.refetchQueries({ queryKey: ['admins'] });
     },
   });
 }
