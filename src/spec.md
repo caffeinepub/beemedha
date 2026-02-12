@@ -1,11 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Make the specified Internet Identity principal the sole administrator (single-admin mode) and reflect this in both backend enforcement and the admin access UI.
+**Goal:** Grant the Internet Identity principal `ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe` admin access (multi-admin) while preserving existing canister state across upgrades.
 
 **Planned changes:**
-- Backend: grant admin privileges to principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` and enforce that it is the only admin.
-- Backend: block admin-management operations that would add any additional admins or remove/demote the owner; ensure `listAdmins` returns only the owner principal.
-- Frontend (/admin/access): disable or remove “Add New Admin” and “Remove Administrator” actions and display an English notice explaining single-admin mode and that admin access is locked to the owner principal.
+- Add the specified principal to the backend’s admin role list so admin-only route guards and APIs recognize them as an admin.
+- Implement a safe, conditional upgrade behavior that preserves all existing stored data and ensures the admin grant is applied idempotently (does not break existing admins, no duplicate/failed upgrades).
 
-**User-visible outcome:** The owner principal can successfully perform admin-only actions, no other principals can become admins, and the Admin Access Management page clearly shows single-admin mode with only the owner listed and no add/remove controls available.
+**User-visible outcome:** When logged in via Internet Identity as the specified principal, the user can access all `/admin` routes and admin-only actions without seeing “Access Denied,” including after upgrading an already-deployed canister with existing data.

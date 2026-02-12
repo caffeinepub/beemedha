@@ -1,52 +1,40 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T18:19:06.720Z",
+  "generatedAt": "2026-02-12T19:29:08.061Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 1,
+    "total": 2,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Grant admin privileges to the Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" and ensure it remains the only administrator (single-admin mode).",
+        "summary": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Enforce single-admin mode in the admin-management APIs: only the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" can call admin-management endpoints, and add/remove operations must be blocked so no additional admins can be created and the owner cannot be removed/demoted.",
+        "summary": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update the Admin Access Management UI (/admin/access) to reflect single-admin mode by disabling or removing the “Add New Admin” and “Remove Administrator” actions and showing an English explanation that admin access is locked to the owner principal.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/AdminAccessPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/admin/AdminAccessPage.tsx"
-        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/pages/admin/AdminAccessPage.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

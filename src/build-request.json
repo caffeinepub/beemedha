@@ -1,80 +1,57 @@
 {
   "kind": "build_request",
-  "title": "Make provided principal the sole admin (single-admin mode)",
+  "title": "Add Thejas principal (ekphf-6psww-...) as an admin",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Grant admin privileges to the Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" and ensure it remains the only administrator (single-admin mode).",
+      "text": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2",
-          "msg-3"
+          "msg-1"
         ],
         "quotes": [
-          "make me as a admin",
-          "should me be the only admin for now",
-          "zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe"
+          "ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe",
+          "add this as an admin for Thejas",
+          "build it"
         ]
       },
       "acceptanceCriteria": [
-        "After deployment/upgrade, calls that require admin permissions (e.g., createProduct, updateLogo, seedProducts) succeed when the caller is principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\".",
-        "After deployment/upgrade, the owner principal appears as an admin when checked via the existing admin-check API used by the frontend (React Query hook useIsCallerAdmin).",
-        "Admin state is enforced server-side and does not rely on frontend checks."
+        "After deployment/upgrade, calling the backend 'isCallerAdmin' (used by the frontend admin route guard) returns true for caller principal ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe.",
+        "When logged in with Internet Identity as that principal, the user can access all /admin routes without seeing the 'Access Denied' screen.",
+        "The change does not remove or weaken existing access control checks for admin-only backend APIs (e.g., create/update/delete products, product updates, contacts, logo update)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Enforce single-admin mode in the admin-management APIs: only the owner principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" can call admin-management endpoints, and add/remove operations must be blocked so no additional admins can be created and the owner cannot be removed/demoted.",
+      "text": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-2",
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "should me be the only admin for now",
-          "build it"
+          "build it",
+          "add this as an admin for Thejas"
         ]
       },
       "acceptanceCriteria": [
-        "backend/main.mo rejects attempts to add any admin principal (including by the owner) with a clear error message indicating single-admin mode is enabled.",
-        "backend/main.mo rejects attempts to remove the owner principal as admin (even if such a call is attempted via candid/direct calls).",
-        "listAdmins returns exactly one principal: \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\"."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update the Admin Access Management UI (/admin/access) to reflect single-admin mode by disabling or removing the “Add New Admin” and “Remove Administrator” actions and showing an English explanation that admin access is locked to the owner principal.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2",
-          "msg-4"
-        ],
-        "quotes": [
-          "should me be the only admin for now",
-          "build it"
-        ]
-      },
-      "acceptanceCriteria": [
-        "On /admin/access, the UI does not allow submitting the add-admin form and does not allow triggering remove-admin for any entry.",
-        "The page shows a clear English notice that single-admin mode is enabled and only the owner principal can be an admin.",
-        "The current admins list renders and shows exactly one admin entry (the owner principal) when listAdmins returns one principal."
+        "Upgrading a canister that already has data preserves all existing state (products, updates, contacts, profiles, logo).",
+        "If the principal ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe is already an admin, the upgrade is idempotent (no errors; role remains admin).",
+        "If the principal is not yet an admin, it becomes an admin after upgrade (verified via the same admin-check query used by the frontend)."
       ]
     }
   ],
   "constraints": [
     "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
+    "Do not edit files under frontend/src/components/ui or other frontend immutable paths defined in SYSTEM_CONTEXT.",
     "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Supporting multiple admins or role escalation flows beyond the single owner principal.",
-    "Third-party authentication providers beyond Internet Identity.",
-    "Adding real-time updates (WebSockets/push)."
+    "Building a UI to map principals to human names (e.g., displaying 'Thejas' in-app).",
+    "Adding third-party authentication providers beyond Internet Identity.",
+    "Adding real-time notifications or messaging around admin changes."
   ],
   "imageRequirements": {
     "required": [],

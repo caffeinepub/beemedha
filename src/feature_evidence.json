@@ -1,24 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-update-the-admin-access-management-ui-admin-access-to-reflect-single-admin-mode-by-disabling-or-removing-the-add-new-admin-and-remove-administrator-actions-and-showing-an-english-explanation-that-admin-access-is-locked-to-the-owner-principal",
-      "featureTitle": "Update the Admin Access Management UI (/admin/access) to reflect single-admin mode by disabling or removing the “Add New Admin” and “Remove Administrator” actions and showing an English explanation that admin access is locked to the owner principal.",
-      "files": [
-        "frontend/src/pages/admin/AdminAccessPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

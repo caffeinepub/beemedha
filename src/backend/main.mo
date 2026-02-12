@@ -1,21 +1,19 @@
 import Array "mo:core/Array";
 import Map "mo:core/Map";
+import Iter "mo:core/Iter";
 import Time "mo:core/Time";
-import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Int "mo:core/Int";
 import Order "mo:core/Order";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
-import Iter "mo:core/Iter";
+import Runtime "mo:core/Runtime";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-// Apply migration when upgrading to this version.
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
+
   include MixinAuthorization(accessControlState);
 
   type Category = {
@@ -121,31 +119,27 @@ actor {
 
   var logo : ?Logo = null;
 
-  // Strict owner check for admin management
-  func adminOnlyCheck(caller : Principal) {
-    let owner : Principal = Principal.fromText("zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe");
-    if (caller != owner) {
-      Runtime.trap("Unauthorized: Only the smart contract owner can perform this action");
+  public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
+    AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
+  };
+
+  public shared ({ caller }) func removeAdmin(adminToRemove : Principal) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
     };
+
+    let initialAdminPrincipal = Principal.fromText("zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe");
+    if (adminToRemove == initialAdminPrincipal) {
+      Runtime.trap("Cannot remove the initial admin principal");
+    };
+
+    AccessControl.assignRole(accessControlState, caller, adminToRemove, #user);
   };
 
-  // Admin Management APIs
-  public query ({ caller }) func listAdmins() : async [Principal] {
-    adminOnlyCheck(caller);
-    [Principal.fromText("zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe")];
+  public shared ({ caller }) func promoteToUser(principal : Principal) : async () {
+    AccessControl.assignRole(accessControlState, caller, principal, #user);
   };
 
-  public shared ({ caller }) func addAdmin(_newAdmin : Principal) : async () {
-    adminOnlyCheck(caller);
-    Runtime.trap("Admin creation not allowed in single-admin mode");
-  };
-
-  public shared ({ caller }) func removeAdmin(_adminToRemove : Principal) : async () {
-    adminOnlyCheck(caller);
-    Runtime.trap("Cannot remove owner in single-admin mode");
-  };
-
-  // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -167,7 +161,6 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // Logo Management (Admin-only)
   public shared ({ caller }) func updateLogo(mimeType : Text, data : [Nat8]) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
@@ -182,7 +175,6 @@ actor {
     logo;
   };
 
-  // Product Management (Admin-only)
   public shared ({ caller }) func createProduct(
     name : Text,
     description : Text,
@@ -274,7 +266,6 @@ actor {
     products.add(id, updatedProduct);
   };
 
-  // Product Update Management (Admin-only)
   public shared ({ caller }) func createProductUpdate(
     productUpdateType : ProductUpdateType,
     productId : Nat,
@@ -309,7 +300,6 @@ actor {
     };
   };
 
-  // Contact Form (Public - any user including guests)
   public shared ({ caller }) func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
     let contactId = nextContactId;
     nextContactId += 1;
@@ -517,4 +507,3 @@ actor {
     #seeded { count = 4 };
   };
 };
-

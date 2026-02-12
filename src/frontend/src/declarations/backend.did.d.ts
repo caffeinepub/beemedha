@@ -109,7 +109,7 @@ export interface _SERVICE {
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'listAdmins' : ActorMethod<[], Array<Principal>>,
+  'promoteToUser' : ActorMethod<[Principal], undefined>,
   'removeAdmin' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'seedProducts' : ActorMethod<[], SeedProductsResult>,

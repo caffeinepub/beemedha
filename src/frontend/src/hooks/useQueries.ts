@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import { useInternetIdentity } from './useInternetIdentity';
 import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants, Logo } from '../backend';
 import { useLiveUpdateConfig } from './useLiveUpdateConfig';
 import { Principal } from '@dfinity/principal';
@@ -303,36 +304,31 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-// Admin Check
+// Admin Check - keyed to authenticated principal to prevent stale cache
 export function useIsCallerAdmin() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const principalKey = identity?.getPrincipal().toString() || 'anonymous';
 
   return useQuery<boolean>({
-    queryKey: ['isAdmin'],
+    queryKey: ['isAdmin', principalKey],
     queryFn: async () => {
       if (!actor) return false;
-      return actor.isCallerAdmin();
+      try {
+        return await actor.isCallerAdmin();
+      } catch (error) {
+        console.error('Admin check failed:', error);
+        return false;
+      }
     },
     enabled: !!actor && !isFetching,
     retry: false,
+    staleTime: 0, // Always refetch on mount to ensure fresh admin status
   });
 }
 
 // Admin Management
-export function useListAdmins() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<Principal[]>({
-    queryKey: ['admins'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.listAdmins();
-    },
-    enabled: !!actor && !isFetching,
-    retry: false,
-  });
-}
-
 export function useAddAdmin() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -343,8 +339,8 @@ export function useAddAdmin() {
       return actor.addAdmin(principal);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admins'] });
-      await queryClient.refetchQueries({ queryKey: ['admins'] });
+      // Invalidate admin check to refresh permissions
+      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
     },
   });
 }
@@ -359,8 +355,8 @@ export function useRemoveAdmin() {
       return actor.removeAdmin(principal);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admins'] });
-      await queryClient.refetchQueries({ queryKey: ['admins'] });
+      // Invalidate admin check to refresh permissions
+      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
     },
   });
 }

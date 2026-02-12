@@ -1,34 +1,45 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T18:19:06.718Z",
-  "summary": "Backend implements owner-only admin-management APIs (listAdmins/addAdmin/removeAdmin) with single-admin behavior and adds a migration module; frontend Admin Access page shows a single-admin notice and owner principal display/copy UI. However, the diff summary does not show the owner being granted admin permissions in the backend’s actual authorization state used by admin-gated operations (e.g., createProduct/updateLogo/seedProducts) or by the existing admin-check API used by the frontend (useIsCallerAdmin).",
+  "generatedAt": "2026-02-12T19:29:08.058Z",
+  "summary": "The diff adds/adjusts backend admin-management functions using an AccessControl module, but it does not show any explicit, conditional upgrade-time grant of admin role to the specified principal, nor any upgrade hooks/state-preservation logic tied to that requirement. It also introduces general admin-management APIs and project_state.json updates that were not requested.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Grant admin privileges to the Internet Identity principal \"zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe\" and ensure it remains the only administrator (single-admin mode).",
-      "reason": "The diff shows admin-management endpoints hardcoded to the owner and uses AccessControl/MixinAuthorization for permission checks elsewhere, but does not show any code that actually assigns the owner principal the admin role in `accessControlState` (or otherwise ensures `AccessControl.isAdmin(...)` / the existing admin-check API recognizes the owner as admin). Without that, admin-gated calls like createProduct/updateLogo/seedProducts and the `useIsCallerAdmin` check may still fail for the owner.",
+      "requirement": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
+      "reason": "In the shown backend changes, there is no evidence of this specific principal being assigned/admin-whitelisted by default (e.g., via initialization or an upgrade-time migration). The only principal explicitly referenced is a different \"initialAdminPrincipal\" in removeAdmin.",
       "evidence": [
-        "backend/main.mo (shows `let accessControlState = AccessControl.initState();` and uses `AccessControl.isAdmin(accessControlState, caller)` but no visible grant/seed of owner as admin)"
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
+      "reason": "The diff summary does not show any upgrade/migration mechanism (e.g., preupgrade/postupgrade hooks, stable state serialization/restoration, or an idempotent 'ensure admin' step during upgrade) that would conditionally add the specified principal while preserving existing state.",
+      "evidence": [
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduced an upgrade migration module that removes `adminPrincipals` and `nextProductIdMap` from stable state via `(with migration = Migration.run)` and a new `backend/migration.mo`.",
-      "reason": "The BuildRequest focuses on enforcing single-admin mode and UI changes; it does not request adding a migration system or removing/altering unrelated stable-state fields.",
+      "description": "Added general admin-management endpoints (addAdmin, removeAdmin, promoteToUser) beyond the specific request to grant one principal admin and ensure upgrade migration.",
+      "reason": "BuildRequest only asks to grant a specific principal admin and implement an upgrade-time, conditional migration; it does not request new public APIs for managing admins/users.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (imports `Migration` and applies `(with migration = Migration.run)`)"
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Modified/added project tracking metadata in project_state.json describing new feature requests (AR-1/AR-2/AR-3).",
+      "reason": "The BuildRequest does not mention updating project_state.json or adding project-management metadata as part of the implementation.",
+      "evidence": [
+        "project_state.json"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.63,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
-    "frontend-file-summaries.txt",
-    "frontend/src/pages/admin/AdminAccessPage.tsx",
     "project_state.json"
   ]
 }

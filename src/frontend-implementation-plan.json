@@ -1,23 +1,6 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Single-admin mode UI adjustments for Admin Access Management",
-  "requirements": [
-    {
-      "id": "REQ-3",
-      "summary": "Update /admin/access to reflect single-admin mode by removing admin add/remove actions and showing an English explanation that admin access is locked to the owner principal.",
-      "acceptanceCriteria": [
-        "On /admin/access, the UI does not allow submitting the add-admin form and does not allow triggering remove-admin for any entry.",
-        "The page shows a clear English notice that single-admin mode is enabled and only the owner principal can be an admin.",
-        "The current admins list renders and shows exactly one admin entry (the owner principal) when listAdmins returns one principal."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminAccessPage.tsx",
-          "operation": "modify",
-          "description": "Adjust the Admin Access Management page to match single-admin mode: remove (or fully disable) the \"Add New Admin\" section and any calls to add-admin mutations; remove (or fully disable) the \"Remove Administrator\" action and confirmation dialog so removal cannot be triggered for any listed admin; add a clear English notice near the top of the page stating that single-admin mode is enabled and admin access is locked to the owner principal. Reference the owner principal from the existing frontend owner configuration (frontend/src/config/owner.ts) so the notice can display the exact owner principal string."
-        }
-      ]
-    }
-  ]
+  "title": "Frontend-only plan: No changes required for adding admin principal",
+  "requirements": []
 }

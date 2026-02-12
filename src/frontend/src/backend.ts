@@ -179,7 +179,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    addAdmin(_newAdmin: Principal): Promise<void>;
+    addAdmin(newAdmin: Principal): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createProduct(name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<bigint>;
     createProductUpdate(productUpdateType: ProductUpdateType, productId: bigint, message: string): Promise<bigint>;
@@ -198,8 +198,8 @@ export interface backendInterface {
     getProductsByCategory(category: Category): Promise<Array<Product>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    listAdmins(): Promise<Array<Principal>>;
-    removeAdmin(_adminToRemove: Principal): Promise<void>;
+    promoteToUser(principal: Principal): Promise<void>;
+    removeAdmin(adminToRemove: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     seedProducts(): Promise<SeedProductsResult>;
     submitContactForm(name: string, email: string, message: string): Promise<bigint>;
@@ -489,17 +489,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async listAdmins(): Promise<Array<Principal>> {
+    async promoteToUser(arg0: Principal): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.listAdmins();
+                const result = await this.actor.promoteToUser(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.listAdmins();
+            const result = await this.actor.promoteToUser(arg0);
             return result;
         }
     }

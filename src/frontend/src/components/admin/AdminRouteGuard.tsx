@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 export default function AdminRouteGuard({ children }: { children: React.ReactNode }) {
   const { identity, login, loginStatus } = useInternetIdentity();
-  const { data: isAdmin, isLoading: isCheckingAdmin } = useIsCallerAdmin();
+  const { data: isAdmin, isLoading: isCheckingAdmin, isFetched } = useIsCallerAdmin();
   const [copied, setCopied] = useState(false);
 
   const isAuthenticated = !!identity;
@@ -27,6 +27,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
     }
   };
 
+  // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -55,7 +56,8 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
     );
   }
 
-  if (isCheckingAdmin) {
+  // Show loading state while checking admin status
+  if (isCheckingAdmin || !isFetched) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
@@ -65,6 +67,7 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
     );
   }
 
+  // Show access denied if not admin
   if (!isAdmin) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -133,5 +136,6 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
     );
   }
 
+  // Render children if admin
   return <>{children}</>;
 }

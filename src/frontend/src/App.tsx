@@ -16,7 +16,6 @@ import AdminNewsPage from './pages/admin/AdminNewsPage';
 import AdminLogoPage from './pages/admin/AdminLogoPage';
 import AdminAccessPage from './pages/admin/AdminAccessPage';
 import AdminRouteGuard from './components/admin/AdminRouteGuard';
-import OwnerOnlyRouteGuard from './components/admin/OwnerOnlyRouteGuard';
 
 const rootRoute = createRootRoute({
   component: SiteLayout,
@@ -130,9 +129,9 @@ const adminAccessRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/access',
   component: () => (
-    <OwnerOnlyRouteGuard>
+    <AdminRouteGuard>
       <AdminAccessPage />
-    </OwnerOnlyRouteGuard>
+    </AdminRouteGuard>
   ),
 });
 

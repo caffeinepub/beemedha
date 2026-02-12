@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { useListAdmins } from '../../hooks/useQueries';
+import { useAddAdmin, useRemoveAdmin } from '../../hooks/useQueries';
 import { Section, Container, BrandCard } from '../../components/brand/BrandPrimitives';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, Copy, Check, AlertCircle, Lock } from 'lucide-react';
+import { Shield, Copy, Check, AlertCircle, UserPlus, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { Principal } from '@dfinity/principal';
-import { OWNER_PRINCIPAL } from '../../config/owner';
+import { validatePrincipal } from '../../utils/principal';
 
 export default function AdminAccessPage() {
   usePageMeta('Admin Access Management', 'Manage administrator access and permissions.');
 
   const { identity } = useInternetIdentity();
-  const { data: admins = [], isLoading: loadingAdmins } = useListAdmins();
+  const addAdminMutation = useAddAdmin();
+  const removeAdminMutation = useRemoveAdmin();
 
+  const [newAdminPrincipal, setNewAdminPrincipal] = useState('');
+  const [removeAdminPrincipal, setRemoveAdminPrincipal] = useState('');
   const [copiedPrincipal, setCopiedPrincipal] = useState<string | null>(null);
 
   const currentUserPrincipal = identity?.getPrincipal().toString();
@@ -30,6 +32,60 @@ export default function AdminAccessPage() {
       setTimeout(() => setCopiedPrincipal(null), 2000);
     } catch (error) {
       toast.error('Failed to copy principal');
+    }
+  };
+
+  const handleAddAdmin = async () => {
+    const validation = validatePrincipal(newAdminPrincipal);
+    
+    if (!validation.success) {
+      toast.error(validation.error || 'Invalid principal');
+      return;
+    }
+
+    if (!validation.principal) {
+      toast.error('Failed to parse principal');
+      return;
+    }
+
+    try {
+      await addAdminMutation.mutateAsync(validation.principal);
+      toast.success('Administrator added successfully');
+      setNewAdminPrincipal('');
+    } catch (error: any) {
+      console.error('Failed to add admin:', error);
+      toast.error(error.message || 'Failed to add administrator');
+    }
+  };
+
+  const handleRemoveAdmin = async () => {
+    const validation = validatePrincipal(removeAdminPrincipal);
+    
+    if (!validation.success) {
+      toast.error(validation.error || 'Invalid principal');
+      return;
+    }
+
+    if (!validation.principal) {
+      toast.error('Failed to parse principal');
+      return;
+    }
+
+    try {
+      await removeAdminMutation.mutateAsync(validation.principal);
+      toast.success('Administrator removed successfully');
+      setRemoveAdminPrincipal('');
+    } catch (error: any) {
+      console.error('Failed to remove admin:', error);
+      
+      // Check for specific error messages from backend
+      if (error.message?.includes('Cannot remove the initial admin')) {
+        toast.error('Cannot remove the initial admin principal');
+      } else if (error.message?.includes('last remaining admin')) {
+        toast.error('Cannot remove the last administrator');
+      } else {
+        toast.error(error.message || 'Failed to remove administrator');
+      }
     }
   };
 
@@ -54,34 +110,15 @@ export default function AdminAccessPage() {
       <Section>
         <Container>
           <div className="max-w-4xl mx-auto space-y-8">
-            {/* Single-Admin Mode Notice */}
+            {/* Multi-Admin Mode Notice */}
             <Alert className="border-primary/50 bg-primary/5">
-              <Lock className="h-5 w-5 text-primary" />
-              <AlertTitle className="text-lg font-semibold">Single-Admin Mode Enabled</AlertTitle>
-              <AlertDescription className="mt-2 space-y-2">
+              <Shield className="h-5 w-5 text-primary" />
+              <AlertTitle className="text-lg font-semibold">Multi-Admin Mode Enabled</AlertTitle>
+              <AlertDescription className="mt-2">
                 <p>
-                  This application is configured in single-admin mode. Admin access is locked to the owner principal only.
+                  This application supports multiple administrators. Any admin can add or remove other admins.
+                  The system prevents removing the initial admin principal to ensure the canister remains accessible.
                 </p>
-                <p className="text-sm">
-                  <strong>Owner Principal:</strong>
-                </p>
-                <div className="flex gap-2 items-center mt-1">
-                  <code className="flex-1 bg-background px-3 py-2 rounded-md text-xs break-all border">
-                    {OWNER_PRINCIPAL}
-                  </code>
-                  <Button
-                    onClick={() => handleCopyPrincipal(OWNER_PRINCIPAL)}
-                    variant="outline"
-                    size="icon"
-                    className="flex-shrink-0"
-                  >
-                    {copiedPrincipal === OWNER_PRINCIPAL ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
               </AlertDescription>
             </Alert>
 
@@ -89,7 +126,7 @@ export default function AdminAccessPage() {
             <BrandCard className="p-6">
               <h2 className="text-2xl font-serif font-bold mb-4">Your Principal</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                This is your Internet Identity principal.
+                This is your Internet Identity principal. Share this with other admins if you need access.
               </p>
               <div className="flex gap-2">
                 <div className="flex-1 bg-muted px-4 py-3 rounded-md font-mono text-sm break-all">
@@ -110,121 +147,109 @@ export default function AdminAccessPage() {
               </div>
             </BrandCard>
 
-            {/* Add New Admin - Disabled in Single-Admin Mode */}
-            <BrandCard className="p-6 opacity-60">
+            {/* Add New Admin */}
+            <BrandCard className="p-6">
               <h2 className="text-2xl font-serif font-bold mb-4 flex items-center gap-2">
-                <Lock className="h-6 w-6" />
+                <UserPlus className="h-6 w-6" />
                 Add New Admin
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Adding new administrators is disabled in single-admin mode.
+                Enter a valid Internet Identity principal to grant admin access.
               </p>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="newAdminPrincipal" className="text-muted-foreground">Principal</Label>
+                  <Label htmlFor="newAdminPrincipal">Principal</Label>
                   <Input
                     id="newAdminPrincipal"
                     type="text"
-                    placeholder="Disabled in single-admin mode"
-                    disabled
-                    className="cursor-not-allowed"
+                    placeholder="Enter principal (e.g., xxxxx-xxxxx-xxxxx-xxxxx-xxx)"
+                    value={newAdminPrincipal}
+                    onChange={(e) => setNewAdminPrincipal(e.target.value)}
+                    disabled={addAdminMutation.isPending}
                   />
                 </div>
 
                 <Button
-                  disabled
-                  className="w-full cursor-not-allowed"
+                  onClick={handleAddAdmin}
+                  disabled={!newAdminPrincipal.trim() || addAdminMutation.isPending}
+                  className="w-full"
                 >
-                  <Lock className="mr-2 h-4 w-4" />
-                  Add Admin (Disabled)
+                  {addAdminMutation.isPending ? (
+                    <>Adding...</>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Add Admin
+                    </>
+                  )}
                 </Button>
               </div>
             </BrandCard>
 
-            {/* Current Admins List */}
+            {/* Remove Admin */}
             <BrandCard className="p-6">
-              <h2 className="text-2xl font-serif font-bold mb-4">Current Administrators</h2>
+              <h2 className="text-2xl font-serif font-bold mb-4 flex items-center gap-2">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+                Remove Admin
+              </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                {admins.length} {admins.length === 1 ? 'administrator' : 'administrators'} with access to the admin panel.
+                Enter a principal to revoke admin access. The initial admin principal and the last remaining admin cannot be removed.
               </p>
-
-              {loadingAdmins ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading administrators...
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="removeAdminPrincipal">Principal</Label>
+                  <Input
+                    id="removeAdminPrincipal"
+                    type="text"
+                    placeholder="Enter principal to remove"
+                    value={removeAdminPrincipal}
+                    onChange={(e) => setRemoveAdminPrincipal(e.target.value)}
+                    disabled={removeAdminMutation.isPending}
+                  />
                 </div>
-              ) : admins.length === 0 ? (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No administrators found. This shouldn't happen - the owner should be listed as an admin.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="space-y-3">
-                  {admins.map((admin) => {
-                    const principalText = admin.toString();
-                    const isOwner = principalText === OWNER_PRINCIPAL;
-                    const isCurrent = principalText === currentUserPrincipal;
 
-                    return (
-                      <div
-                        key={principalText}
-                        className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-mono text-sm break-all">
-                            {principalText}
-                          </div>
-                          <div className="flex gap-2 mt-1">
-                            {isOwner && (
-                              <div className="text-xs text-primary font-medium flex items-center gap-1">
-                                <Shield className="h-3 w-3" />
-                                Owner
-                              </div>
-                            )}
-                            {isCurrent && (
-                              <div className="text-xs text-muted-foreground font-medium">
-                                (You)
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <Button
-                            onClick={() => handleCopyPrincipal(principalText)}
-                            variant="outline"
-                            size="icon"
-                          >
-                            {copiedPrincipal === principalText ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            disabled
-                            className="cursor-not-allowed opacity-50"
-                            title="Cannot remove admin in single-admin mode"
-                          >
-                            <Lock className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                <Button
+                  onClick={handleRemoveAdmin}
+                  disabled={!removeAdminPrincipal.trim() || removeAdminMutation.isPending}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  {removeAdminMutation.isPending ? (
+                    <>Removing...</>
+                  ) : (
+                    <>
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      Remove Admin
+                    </>
+                  )}
+                </Button>
+              </div>
 
-              <Alert className="mt-4">
+              <Alert className="mt-4" variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  In single-admin mode, the owner principal cannot be removed and no additional administrators can be added.
+                  <strong>Warning:</strong> Removing an admin will immediately revoke their access to all admin features.
                 </AlertDescription>
               </Alert>
             </BrandCard>
+
+            {/* Information Notice */}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Admin Management</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>
+                  As an administrator, you can add new admins by entering their Internet Identity principal above.
+                  To remove an admin, enter their principal in the removal section.
+                </p>
+                <p className="text-xs mt-2">
+                  <strong>Note:</strong> The backend prevents removing the initial admin principal (zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe) 
+                  and the last remaining admin to ensure the canister remains accessible.
+                </p>
+              </AlertDescription>
+            </Alert>
           </div>
         </Container>
       </Section>
