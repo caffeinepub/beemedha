@@ -1,0 +1,390 @@
+{
+  "kind": "build_request",
+  "title": "Beemedha premium honey brand website with live products/news and admin updates",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Implement a consistent premium, organic Beemedha visual theme across the site: warm honey-gold/deep amber/natural brown/soft cream with green accents, elegant serif headings + clean sans-serif body text, ample white space, nature-inspired styling, and reusable layout primitives (header, section wrappers, cards, badges, buttons).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Tone: Premium, organic, trustworthy, and authentic",
+          "Color Palette: Warm honey gold, deep amber, natural brown, soft cream, and green accents",
+          "Typography: Elegant serif for headings, clean sans-serif for body text",
+          "Overall Feel: Premium organic brand / Clean layout with ample white space / Nature-inspired visuals"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All pages share a consistent header/footer and typography pairing (serif headings, sans body).",
+        "Primary/secondary button styles and card components match the specified palette and spacing.",
+        "No default/template styling remains visually dominant (theme feels intentionally branded)."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Create the main site navigation and routing for required pages: Home, About Beemedha, Products (listing), Product Detail, Live Updates/News, Certifications & Quality Assurance, Contact Us, plus Privacy Policy, Terms & Conditions.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Required Pages & Sections: 1. Home Page ... 8. Footer ... Privacy Policy, Terms & Conditions"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Users can navigate to all required pages from the header and/or footer.",
+        "Product cards link to an individual product detail route.",
+        "Privacy Policy and Terms & Conditions routes are reachable from the footer."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Build the Home page with: hero section featuring tagline “Pure Honey, Straight from Nature”, high-quality honey/beehive visuals, primary CTAs (“Shop Now”, “Explore Our Honey”), and a trust highlight section for “100% Natural”, “No Adulteration”, “Lab Tested”.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Hero section with tagline: “Pure Honey, Straight from Nature”",
+          "Call-to-action buttons: Shop Now, Explore Our Honey",
+          "Highlights: 100% Natural, No Adulteration, Lab Tested",
+          "High-quality honey and beehive visuals"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Hero displays the exact tagline text and includes two CTA buttons with the exact labels.",
+        "Trust highlights are visible above the fold or immediately below hero and presented as premium badges/cards.",
+        "Hero includes at least one branded static visual asset from frontend/public/assets/generated."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Build the About Beemedha page describing Beemedha’s story and commitment to purity, ethical beekeeping practices, and sustainable harvesting methods, using clear sections and supportive visuals.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "2. About Beemedha",
+          "Story of Beemedha and its commitment to purity",
+          "Ethical beekeeping practices",
+          "Sustainable harvesting methods"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Page contains distinct sections for story/commitment, ethical beekeeping, and sustainable harvesting.",
+        "Page styling matches the premium brand theme and includes at least one relevant static visual asset."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Implement backend data models and APIs to support live product updates: products with category, name, images, description, nutritional values, harvest location, benefits, price, and availability status (In Stock / Limited / Out of Stock), plus timestamps for updates/new arrivals.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Products Page (Live Updates Enabled)",
+          "Show live product updates (stock availability, pricing, new arrivals)",
+          "Live stock updates (In Stock / Limited / Out of Stock)",
+          "Product Detail Page: Detailed description, Nutritional values, Harvest location, Benefits"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes query methods to list products and fetch a single product by ID/slug.",
+        "Product records include category, price, and availability status exactly matching the three user-specified states.",
+        "Backend supports create/update/delete operations for products for use by an admin panel."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Build the Products listing page that displays product cards with image, name, price, and availability status, supports browsing by the specified categories (Raw Forest Honey, Organic Wild Honey, Herbal Infused Honey, Honey Comb), and reflects live updates from the backend.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "3. Products Page (Live Updates Enabled)",
+          "Product cards with images, price, availability status",
+          "Product categories: Raw Forest Honey / Organic Wild Honey / Herbal Infused Honey / Honey Comb"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Products page shows a category filter/tabs for the four specified categories.",
+        "Each product card shows an image, price, and a clearly styled availability badge for In Stock/Limited/Out of Stock.",
+        "Updates made in the admin panel become visible on the Products page after refresh and/or within the configured polling interval."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Build the Product Detail page showing: detailed description, nutritional values, harvest location, benefits, and customer reviews; display current price and availability from the backend.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "4. Product Detail Page",
+          "Detailed description",
+          "Nutritional values",
+          "Harvest location",
+          "Benefits",
+          "Customer reviews"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Product detail route loads product data by ID/slug and renders all specified sections.",
+        "Customer reviews are displayed per product (stored and read from the backend).",
+        "Page gracefully handles missing/empty reviews (e.g., ‘No reviews yet’)."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Implement backend data models and APIs for a Live Updates/News feed supporting: new harvest announcements, seasonal availability, price updates, and limited-time offers, with publish dates and optional product references.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "5. Live Updates / News Section",
+          "New harvest announcements",
+          "Seasonal honey availability",
+          "Price updates",
+          "Limited-time offers"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes methods to list news items (most recent first) and fetch a single news item.",
+        "Admin can create/update/delete news items.",
+        "News items include type/category, title, content, publish date, and optional related product ID(s)."
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "text": "Build the Live Updates / News page that lists announcements/updates from the backend with clear date display, filtering by update type, and a detail view/expanded reading experience.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "5. Live Updates / News Section"
+        ]
+      },
+      "acceptanceCriteria": [
+        "News page loads data from backend and renders a list with titles and dates.",
+        "Users can filter or segment news by the four specified update types.",
+        "Each news item can be opened to read full details (separate route or expansion)."
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "text": "Create the Certifications & Quality Assurance page with sections for lab testing details, organic certifications, and quality seals/trust badges, using premium badge visuals and clean content hierarchy.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "6. Certifications & Quality Assurance",
+          "Lab testing details",
+          "Organic certifications",
+          "Quality seals and trust badges"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Page includes distinct sections for lab testing, certifications, and trust badges.",
+        "At least one generated static badge/seal image is displayed on the page.",
+        "Content is structured with semantic headings suitable for SEO."
+      ]
+    },
+    {
+      "id": "REQ-11",
+      "text": "Build the Contact Us page with: a contact form (name, email/phone, message), a WhatsApp chat button (link-based), displayed email & phone details, and an embedded Google Maps location (iframe embed or map link).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "7. Contact Us",
+          "Contact form",
+          "WhatsApp chat button",
+          "Email & phone details",
+          "Google Maps location"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Contact form validates required fields and shows a success/error state after submission.",
+        "WhatsApp button is present and clickable (opens WhatsApp web/app via link).",
+        "Google Maps is displayed via embed iframe or a clearly labeled link if embedding is not possible."
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "text": "Implement backend handling for contact form submissions (store submissions with timestamp; provide an admin-only listing view in the admin panel).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Contact form",
+          "Admin panel for live product updates"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend stores contact submissions with name, contact info, message, and timestamp.",
+        "Admin can list contact submissions in the admin panel.",
+        "No contact submission data is publicly exposed without admin access."
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "text": "Implement a global Footer containing: social media links, newsletter signup, and links to Privacy Policy and Terms & Conditions.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "8. Footer",
+          "Social media links",
+          "Newsletter signup",
+          "Privacy Policy, Terms & Conditions"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Footer is visible on all pages and contains social links, newsletter signup UI, and policy links.",
+        "Newsletter signup has basic validation and a success/error message.",
+        "Privacy Policy and Terms pages render readable legal placeholder content in English."
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "text": "Create an Admin panel UI for managing live updates, including CRUD for products (including stock status, price, images, categories) and news items; restrict access to authenticated admins using Internet Identity.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Admin panel for live product updates",
+          "Show live product updates (stock availability, pricing, new arrivals)",
+          "Live Updates / News Section"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin routes are not accessible to unauthenticated users.",
+        "An allowlist-based admin authorization check exists on the backend (only approved principals can mutate data).",
+        "Admin can create/edit/delete products and news and see changes reflected on public pages."
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "text": "Implement “live updates” behavior on the frontend using React Query (polling and/or refetch-on-focus) so product availability/pricing and news updates refresh without manual page redesign; provide a visible “Last updated” timestamp on relevant pages.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Show live product updates (stock availability, pricing, new arrivals)",
+          "Live stock updates (In Stock / Limited / Out of Stock)",
+          "Live Updates Enabled"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Products and News pages automatically refetch on a defined interval and on window focus.",
+        "A “Last updated” label is displayed and changes when new data is fetched.",
+        "Polling interval is configurable in code (single place)."
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "text": "Ensure technical quality: fully responsive layouts (mobile/tablet/desktop), fast-loading pages (optimize images and avoid unnecessary heavy assets), and SEO-optimized structure (semantic headings, per-page titles/meta descriptions, accessible navigation).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Fully responsive (mobile, tablet, desktop)",
+          "Fast loading speed",
+          "SEO-optimized structure"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All pages render correctly on small, medium, and large breakpoints without horizontal overflow.",
+        "Static images are appropriately sized/compressed and loaded from the public assets directory.",
+        "Each route sets an appropriate document title and meta description; headings follow a logical hierarchy (H1/H2/H3)."
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Prepare the product purchase flow UI to be “secure checkout ready” for future e-commerce expansion by adding non-functional placeholders (e.g., “Add to Cart” and “Checkout coming soon”) without implementing payments or external integrations.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Secure checkout ready (future e-commerce expansion)",
+          "Sell natural honey products online"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Product detail page includes an “Add to Cart” (or equivalent) UI element that clearly indicates checkout is not yet available.",
+        "No payment processing or third-party checkout integration is implemented.",
+        "UI and copy remain premium and trustworthy (no broken/unfinished-looking controls)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor (all logic in backend/main.mo); add backend/migration.mo only if state upgrades become necessary.",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui; compose and use these as-is.",
+    "Use English for all user-facing text.",
+    "No third-party authentication providers; only Internet Identity for admin authentication.",
+    "No WebSockets/real-time chat; implement live updates via polling/refetch with React Query.",
+    "No external databases or cloud services; persist data in the canister."
+  ],
+  "nonGoals": [
+    "Implementing actual payment processing, order management, shipping, or a full e-commerce checkout workflow.",
+    "Integrating WhatsApp Business APIs (use a simple link-based chat button only).",
+    "Integrating external SEO services, analytics, or marketing platforms.",
+    "Building a multi-canister or microservices backend."
+  ],
+  "imageRequirements": {
+    "required": [
+      "Premium honey jar + honey dipper hero illustration/photo-style graphic (beemedha-hero.dim_1920x1080.png)",
+      "Honeycomb texture background (subtle, light) (honeycomb-bg.dim_1600x900.png)",
+      "Bee + leaf organic badge icon set (4 icons) (beemedha-badges.dim_512x512.png)",
+      "Quality seal / lab-tested stamp badge (quality-seal.dim_512x512.png)",
+      "Product placeholder pack for 4 categories (raw-forest-honey.dim_800x800.png)",
+      "Product placeholder pack for 4 categories (organic-wild-honey.dim_800x800.png)",
+      "Product placeholder pack for 4 categories (herbal-infused-honey.dim_800x800.png)",
+      "Product placeholder pack for 4 categories (honey-comb.dim_800x800.png)"
+    ],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

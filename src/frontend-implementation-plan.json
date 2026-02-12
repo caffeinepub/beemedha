@@ -1,0 +1,415 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Beemedha premium honey brand website (frontend)",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Apply a consistent premium, organic Beemedha theme (palette, typography, spacing) and reusable layout primitives.",
+      "acceptanceCriteria": [
+        "All pages share a consistent header/footer and typography pairing (serif headings, sans body).",
+        "Primary/secondary button styles and card components match the specified palette and spacing.",
+        "No default/template styling remains visually dominant (theme feels intentionally branded)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "create",
+          "description": "Create the src-level stylesheet required by the existing app import and establish global theme tokens/typography defaults; reference and/or import existing frontend/index.css to avoid duplicated base styles."
+        },
+        {
+          "path": "frontend/index.css",
+          "operation": "modify",
+          "description": "Adjust CSS variables (colors, radius, base body styles) to match the honey-gold/amber/brown/cream with green accents palette and premium whitespace; keep Tailwind layers intact."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Extend Tailwind theme with Beemedha brand color tokens and typography-friendly defaults to support reusable layout primitives."
+        },
+        {
+          "path": "frontend/src/components/brand/BrandPrimitives.tsx",
+          "operation": "create",
+          "description": "Create reusable layout primitives (Section wrapper, Container, BrandCard, BrandBadge, BrandButton variants) using existing shadcn-ui base components where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/layout/SiteLayout.tsx",
+          "operation": "create",
+          "description": "Create a shared site layout wrapper that applies consistent spacing, background styling (including optional subtle honeycomb background), and typography classes across all routes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Implement navigation and routing for all required public pages and legal pages, including product/news detail routes.",
+      "acceptanceCriteria": [
+        "Users can navigate to all required pages from the header and/or footer.",
+        "Product cards link to an individual product detail route.",
+        "Privacy Policy and Terms & Conditions routes are reachable from the footer."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "create",
+          "description": "Create the app shell with routing for Home, About, Products, Product Detail, Live Updates/News, Certifications, Contact, Privacy Policy, Terms & Conditions, plus Admin routes; wrap routes with the shared SiteLayout."
+        },
+        {
+          "path": "frontend/src/components/layout/Header.tsx",
+          "operation": "create",
+          "description": "Implement the main header navigation with links to required public pages and an Admin entry point (not shown prominently). Use shadcn-ui navigation primitives where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/layout/Footer.tsx",
+          "operation": "create",
+          "description": "Implement global footer with social links, newsletter signup UI, and links to Privacy Policy and Terms & Conditions; ensure it renders across all routes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Build the Home page hero, CTAs, and trust highlights with premium visuals.",
+      "acceptanceCriteria": [
+        "Hero displays the exact tagline text and includes two CTA buttons with the exact labels.",
+        "Trust highlights are visible above the fold or immediately below hero and presented as premium badges/cards.",
+        "Hero includes at least one branded static visual asset from frontend/public/assets/generated."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "create",
+          "description": "Create Home page with hero tagline “Pure Honey, Straight from Nature”, CTA buttons labeled “Shop Now” and “Explore Our Honey”, and trust highlight badges/cards for “100% Natural”, “No Adulteration”, “Lab Tested”; render hero visual using frontend/public/assets/generated/beemedha-hero.dim_1920x1080.png and optionally a subtle background using frontend/public/assets/generated/honeycomb-bg.dim_1600x900.png."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire HomePage into the router as the Home route and ensure the header CTAs navigate to Products."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Build About Beemedha page with story, ethical beekeeping, and sustainable harvesting sections plus visuals.",
+      "acceptanceCriteria": [
+        "Page contains distinct sections for story/commitment, ethical beekeeping, and sustainable harvesting.",
+        "Page styling matches the premium brand theme and includes at least one relevant static visual asset."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AboutPage.tsx",
+          "operation": "create",
+          "description": "Create About page with distinct sections (story/commitment, ethical beekeeping, sustainable harvesting) and supportive visuals, leveraging frontend/public/assets/generated/honeycomb-bg.dim_1600x900.png and/or frontend/public/assets/generated/beemedha-badges.dim_512x512.png for organic accents."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire AboutPage into the router and main navigation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Build Products listing with category browsing, availability badges, and live backend updates.",
+      "acceptanceCriteria": [
+        "Products page shows a category filter/tabs for the four specified categories.",
+        "Each product card shows an image, price, and a clearly styled availability badge for In Stock/Limited/Out of Stock.",
+        "Updates made in the admin panel become visible on the Products page after refresh and/or within the configured polling interval."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useLiveUpdateConfig.ts",
+          "operation": "create",
+          "description": "Create a single source of truth for React Query polling/refetch settings (interval, refetch-on-focus) shared by Products and News pages."
+        },
+        {
+          "path": "frontend/src/hooks/useProducts.ts",
+          "operation": "create",
+          "description": "Create React Query hooks to load products from the backend actor (all products and/or by category) using the polling config, and surface a 'last updated' timestamp to the UI."
+        },
+        {
+          "path": "frontend/src/pages/ProductsPage.tsx",
+          "operation": "create",
+          "description": "Create Products listing page with category tabs for Raw Forest Honey, Organic Wild Honey, Herbal Infused Honey, Honey Comb; render product cards showing image, name, price, and availability badge; use category placeholder images from frontend/public/assets/generated/raw-forest-honey.dim_800x800.png, frontend/public/assets/generated/organic-wild-honey.dim_800x800.png, frontend/public/assets/generated/herbal-infused-honey.dim_800x800.png, frontend/public/assets/generated/honey-comb.dim_800x800.png when product images are missing. Use shadcn-ui Tabs/Badge/Card/Button where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/products/ProductCard.tsx",
+          "operation": "create",
+          "description": "Create a reusable ProductCard component (image, name, price, availability badge) that links to the Product Detail route. Use shadcn-ui Card/Badge/Button where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire ProductsPage into routing and ensure product cards navigate to Product Detail route."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Build Product Detail page with required sections, backend-driven price/availability, and reviews display with empty state.",
+      "acceptanceCriteria": [
+        "Product detail route loads product data by ID/slug and renders all specified sections.",
+        "Customer reviews are displayed per product (stored and read from the backend).",
+        "Page gracefully handles missing/empty reviews (e.g., ‘No reviews yet’)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useProductDetail.ts",
+          "operation": "create",
+          "description": "Create React Query hook to load a single product by route param (ID) and to load per-product review/update data from backend capabilities; include polling config where relevant."
+        },
+        {
+          "path": "frontend/src/pages/ProductDetailPage.tsx",
+          "operation": "create",
+          "description": "Create Product Detail page rendering detailed description, nutritional values (placeholder section text if not provided by backend record), harvest location (placeholder), benefits (placeholder), customer reviews section reading from backend-provided per-product updates/reviews; show price and availability from backend product data; include empty state 'No reviews yet' when applicable."
+        },
+        {
+          "path": "frontend/src/components/products/PurchasePlaceholder.tsx",
+          "operation": "create",
+          "description": "Create non-functional purchase UI block used on Product Detail (Add to Cart button + 'Checkout coming soon' messaging) consistent with the premium theme. Use shadcn-ui Button/Alert components where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire ProductDetailPage into router as the Product Detail route (by numeric ID) from the Products listing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "summary": "Build Live Updates/News listing with filtering by update type and a detail/expanded reading experience.",
+      "acceptanceCriteria": [
+        "News page loads data from backend and renders a list with titles and dates.",
+        "Users can filter or segment news by the four specified update types.",
+        "Each news item can be opened to read full details (separate route or expansion)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useNews.ts",
+          "operation": "create",
+          "description": "Create React Query hooks to load live updates/news items from backend capabilities (all items and/or by type) using shared polling config, and expose a 'last updated' timestamp."
+        },
+        {
+          "path": "frontend/src/pages/NewsPage.tsx",
+          "operation": "create",
+          "description": "Create Live Updates/News page with a type filter for: new harvest announcements, seasonal availability, price updates, limited-time offers; render list with title/message preview and publish date formatting; include visible 'Last updated' label."
+        },
+        {
+          "path": "frontend/src/pages/NewsDetailPage.tsx",
+          "operation": "create",
+          "description": "Create news detail view route to read full update content, with clear date display and optional related product link if a product reference exists."
+        },
+        {
+          "path": "frontend/src/components/news/NewsCard.tsx",
+          "operation": "create",
+          "description": "Create reusable NewsCard component for list items (title/message, type badge, date, link to detail). Use shadcn-ui Card/Badge where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire NewsPage and NewsDetailPage into the router and header navigation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "summary": "Build Certifications & Quality Assurance page with lab testing, certifications, and trust badges using premium visuals.",
+      "acceptanceCriteria": [
+        "Page includes distinct sections for lab testing, certifications, and trust badges.",
+        "At least one generated static badge/seal image is displayed on the page.",
+        "Content is structured with semantic headings suitable for SEO."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/CertificationsPage.tsx",
+          "operation": "create",
+          "description": "Create Certifications & Quality Assurance page with semantic headings and distinct sections; display frontend/public/assets/generated/quality-seal.dim_512x512.png and optionally frontend/public/assets/generated/beemedha-badges.dim_512x512.png as trust badge visuals."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire CertificationsPage into the router and navigation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-11",
+      "summary": "Build Contact Us page with validated contact form, WhatsApp link button, contact details, and Google Maps embed/link.",
+      "acceptanceCriteria": [
+        "Contact form validates required fields and shows a success/error state after submission.",
+        "WhatsApp button is present and clickable (opens WhatsApp web/app via link).",
+        "Google Maps is displayed via embed iframe or a clearly labeled link if embedding is not possible."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/ContactPage.tsx",
+          "operation": "create",
+          "description": "Create Contact page with a validated form (name, email/phone field mapped to backend's email field, message), success/error states after submission via backend capability, WhatsApp chat link button, displayed email/phone details, and Google Maps iframe embed (or fallback link). Use shadcn-ui Form/Input/Textarea/Button/Alert where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useContactForm.ts",
+          "operation": "create",
+          "description": "Create a React Query mutation hook to submit contact form data to the backend capability and provide consistent success/error handling for the Contact page."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire ContactPage into the router and navigation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "summary": "Add a global footer with social links, newsletter signup UI, and policy links; create readable legal placeholder pages.",
+      "acceptanceCriteria": [
+        "Footer is visible on all pages and contains social links, newsletter signup UI, and policy links.",
+        "Newsletter signup has basic validation and a success/error message.",
+        "Privacy Policy and Terms pages render readable legal placeholder content in English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/PrivacyPolicyPage.tsx",
+          "operation": "create",
+          "description": "Create Privacy Policy page with readable English placeholder legal content and semantic headings."
+        },
+        {
+          "path": "frontend/src/pages/TermsPage.tsx",
+          "operation": "create",
+          "description": "Create Terms & Conditions page with readable English placeholder legal content and semantic headings."
+        },
+        {
+          "path": "frontend/src/components/layout/Footer.tsx",
+          "operation": "modify",
+          "description": "Add newsletter signup UI with basic validation and success/error messaging (non-persisted), social media links, and links to Privacy Policy and Terms routes."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire PrivacyPolicyPage and TermsPage routes and ensure footer policy links navigate correctly."
+        }
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "summary": "Create an admin panel UI for managing products and news, protected by Internet Identity authentication and admin authorization checks.",
+      "acceptanceCriteria": [
+        "Admin routes are not accessible to unauthenticated users.",
+        "An allowlist-based admin authorization check exists on the backend (only approved principals can mutate data).",
+        "Admin can create/edit/delete products and news and see changes reflected on public pages."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "operation": "create",
+          "description": "Create an admin route guard that requires Internet Identity login and checks admin status via backend capability before rendering admin pages; show an Access Denied screen otherwise. Use the selected authorization component approach for admin-only gating. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/auth/LoginButton.tsx",
+          "operation": "create",
+          "description": "Create a Login/Logout button component for Internet Identity to support admin access and ensure React Query cache is cleared on logout. Use the selected authorization component guidance. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminDashboardPage.tsx",
+          "operation": "create",
+          "description": "Create an Admin dashboard landing page with navigation to manage Products and News; include clear warning that it is restricted to admins."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "operation": "create",
+          "description": "Create admin UI to create/edit/delete products (category, name, description, price, availability, images list) using backend capabilities; use shadcn-ui Dialog/Form components for editing. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminNewsPage.tsx",
+          "operation": "create",
+          "description": "Create admin UI to create/edit/delete news items (type, message/content, optional related product ID) using backend capabilities (product updates). Use shadcn-ui Dialog/Form components for editing. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add admin routes under /admin and wrap them with AdminRouteGuard; ensure public site remains accessible without login."
+        }
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "summary": "Implement live updates via React Query polling/refetch-on-focus and show 'Last updated' timestamps.",
+      "acceptanceCriteria": [
+        "Products and News pages automatically refetch on a defined interval and on window focus.",
+        "A “Last updated” label is displayed and changes when new data is fetched.",
+        "Polling interval is configurable in code (single place)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useLiveUpdateConfig.ts",
+          "operation": "modify",
+          "description": "Ensure the polling interval and refetch-on-focus settings are centralized and exported for consistent use across Products, Product Detail (where appropriate), and News."
+        },
+        {
+          "path": "frontend/src/pages/ProductsPage.tsx",
+          "operation": "modify",
+          "description": "Display a visible 'Last updated' timestamp that updates when React Query refetches product data."
+        },
+        {
+          "path": "frontend/src/pages/NewsPage.tsx",
+          "operation": "modify",
+          "description": "Display a visible 'Last updated' timestamp that updates when React Query refetches news data."
+        }
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "summary": "Ensure responsive, performant, and SEO-optimized UI (semantic structure, titles/meta, accessible navigation).",
+      "acceptanceCriteria": [
+        "All pages render correctly on small, medium, and large breakpoints without horizontal overflow.",
+        "Static images are appropriately sized/compressed and loaded from the public assets directory.",
+        "Each route sets an appropriate document title and meta description; headings follow a logical hierarchy (H1/H2/H3)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/usePageMeta.ts",
+          "operation": "create",
+          "description": "Create a small hook to set document title and manage a per-page meta description tag (create/update) on route change."
+        },
+        {
+          "path": "frontend/index.html",
+          "operation": "modify",
+          "description": "Add a default meta description tag and ensure baseline SEO-friendly head structure; keep existing title as a sensible default."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Apply usePageMeta and ensure semantic heading hierarchy (single H1, supporting H2/H3) and responsive layout for hero/highlights."
+        },
+        {
+          "path": "frontend/src/pages/ProductsPage.tsx",
+          "operation": "modify",
+          "description": "Apply usePageMeta; ensure product grid and filters are responsive and accessible (keyboard focus states, descriptive labels)."
+        },
+        {
+          "path": "frontend/src/components/layout/Header.tsx",
+          "operation": "modify",
+          "description": "Ensure accessible navigation (focus styles, aria labels as needed) and responsive mobile menu behavior using shadcn-ui primitives where appropriate. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "summary": "Add secure-checkout-ready purchase flow placeholders without implementing payments or integrations.",
+      "acceptanceCriteria": [
+        "Product detail page includes an “Add to Cart” (or equivalent) UI element that clearly indicates checkout is not yet available.",
+        "No payment processing or third-party checkout integration is implemented.",
+        "UI and copy remain premium and trustworthy (no broken/unfinished-looking controls)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/products/PurchasePlaceholder.tsx",
+          "operation": "modify",
+          "description": "Refine copy and styling to be premium and explicit about 'Checkout coming soon' while keeping the control non-functional."
+        },
+        {
+          "path": "frontend/src/pages/ProductDetailPage.tsx",
+          "operation": "modify",
+          "description": "Render the PurchasePlaceholder prominently near price/availability, ensuring it does not trigger any payment or external checkout logic."
+        }
+      ]
+    }
+  ]
+}

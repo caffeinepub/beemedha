@@ -1,0 +1,135 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-12T05:33:20.277Z",
+  "summary": "Diff adds a TanStack Router-based multi-page frontend with shared SiteLayout (Header/Footer), brand primitives, admin route guarding via Internet Identity, React Query polling config, and a Motoko backend actor with product/update/contact types plus access control scaffolding. Several BuildRequest data fields and behaviors (product details, reviews, full news model, contact requirements, and “Last updated” UI) are not evidenced in the diff summary, and there is evidence of an extra secret-token-based admin initialization path not requested.",
+  "missing_requirements": [
+    {
+      "id": "REQ-5",
+      "requirement": "Backend product model must include category, name, images, description, nutritional values, harvest location, benefits, price, availability status (In Stock/Limited/Out of Stock), and timestamps; expose list + fetch single by ID/slug; support admin CRUD.",
+      "reason": "The Product type shown in backend/main.mo lacks nutritional values, harvest location, benefits, and any slug field. The diff snippet also does not show any fetch-by-slug API. While create/update are shown, list/get methods are not visible in the provided excerpt.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "requirement": "Product Detail must show nutritional values, harvest location, benefits, and customer reviews per product stored/read from backend; handle empty reviews.",
+      "reason": "No backend data model or API for customer reviews is shown. The backend Product type also does not include nutritional values/harvest location/benefits fields. Product detail page implementation is not included in the diff summary (only routing to it).",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/App.tsx"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "Backend news feed with type/category, title, content, publish date, optional related product ID(s); list most recent first; fetch single; admin CRUD.",
+      "reason": "The backend shows a ProductUpdate model with productUpdateType, productId, message, timestamp, but no explicit title/content separation, no publish date field distinct from timestamp, and no optional multiple related product IDs. The existence of list/single/CRUD methods for news is not evidenced in the provided backend excerpt.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "requirement": "News page must list items with dates, allow filtering by the four update types, and allow reading full details (route or expansion).",
+      "reason": "Only NewsCard and routes to /news and /news/$newsId are shown; no NewsPage implementation is included, so filtering UI/behavior and date list rendering cannot be confirmed from the diff summary.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/news/NewsCard.tsx"
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "requirement": "Certifications & Quality Assurance page with sections for lab testing, certifications, and trust badges; display at least one generated badge/seal image; semantic headings.",
+      "reason": "Routing exists for /certifications but the CertificationsPage content is not shown in the diff summary, so required sections and badge/seal usage cannot be verified.",
+      "evidence": [
+        "frontend/src/App.tsx"
+      ]
+    },
+    {
+      "id": "REQ-11",
+      "requirement": "Contact Us page with validated contact form (name, email/phone, message), WhatsApp link button, displayed email & phone, and Google Maps embed/link; show success/error state after submission.",
+      "reason": "ContactPage implementation is not shown in the diff summary. Backend contact submission type only includes name/email/message (no phone field) in the excerpt.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "requirement": "Backend must store contact form submissions with timestamp; admin-only listing in admin panel; not publicly exposed.",
+      "reason": "Although a ContactFormSubmission type exists, the excerpt does not show APIs to create submissions or an admin-only list method, nor any linkage to an admin UI page for viewing submissions (admin pages shown are only products/news).",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/App.tsx",
+        "frontend/src/pages/admin/AdminDashboardPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "requirement": "Products and News pages must refetch on an interval and on window focus, and display a visible “Last updated” timestamp; polling interval configurable in a single place.",
+      "reason": "Polling configuration is centralized (useLiveUpdateConfig) and queries use it, but no UI evidence of a “Last updated” label/timestamp on Products/News pages is shown in the diff summary.",
+      "evidence": [
+        "frontend/src/hooks/useLiveUpdateConfig.ts",
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Secret-token-based access control initialization via URL parameter (caffeineAdminToken) and actor._initializeAccessControlWithSecret",
+      "reason": "BuildRequest requires admin authentication only via Internet Identity and backend allowlist authorization. The diff shows an additional secret token mechanism being pulled from URL params and used to initialize access control, which is not requested and may undermine the 'only Internet Identity' constraint.",
+      "evidence": [
+        "frontend/src/hooks/useActor.ts"
+      ]
+    },
+    {
+      "description": "User profile management APIs (get/save user profile) gated by a #user permission",
+      "reason": "No user profile feature is requested in the BuildRequest; only admin-authenticated CRUD for products/news and contact submissions are required.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "confidence": 0.72,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/admin/AdminRouteGuard.tsx",
+    "frontend/src/components/auth/LoginButton.tsx",
+    "frontend/src/components/brand/BrandPrimitives.tsx",
+    "frontend/src/components/layout/Footer.tsx",
+    "frontend/src/components/layout/Header.tsx",
+    "frontend/src/components/layout/SiteLayout.tsx",
+    "frontend/src/components/news/NewsCard.tsx",
+    "frontend/src/components/products/ProductCard.tsx",
+    "frontend/src/components/products/PurchasePlaceholder.tsx",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useLiveUpdateConfig.ts",
+    "frontend/src/hooks/usePageMeta.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/AboutPage.tsx",
+    "frontend/src/pages/CertificationsPage.tsx",
+    "frontend/src/pages/ContactPage.tsx",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/NewsDetailPage.tsx",
+    "frontend/src/pages/NewsPage.tsx",
+    "frontend/src/pages/PrivacyPolicyPage.tsx",
+    "frontend/src/pages/ProductDetailPage.tsx",
+    "frontend/src/pages/ProductsPage.tsx",
+    "frontend/src/pages/TermsPage.tsx",
+    "frontend/src/pages/admin/AdminDashboardPage.tsx",
+    "frontend/src/pages/admin/AdminNewsPage.tsx",
+    "frontend/src/pages/admin/AdminProductsPage.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}

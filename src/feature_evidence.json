@@ -1,0 +1,304 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-implement-a-consistent-premium-organic-beemedha-visual-theme-across-the-site-warm-honey-gold-deep-amber-natural-brown-soft-cream-with-green-accents-elegant-serif-headings-clean-sans-serif-body-text-ample-white-space-nature-inspired-styling-and-reusable-layout-primitives-header-section-wrappers-cards-badges-buttons",
+      "featureTitle": "Implement a consistent premium, organic Beemedha visual theme across the site: warm honey-gold/deep amber/natural brown/soft cream with green accents, elegant serif headings + clean sans-serif body text, ample white space, nature-inspired styling, and reusable layout primitives (header, section wrappers, cards, badges, buttons).",
+      "files": [
+        "frontend/index.css",
+        "frontend/src/components/brand/BrandPrimitives.tsx",
+        "frontend/src/components/layout/SiteLayout.tsx",
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-create-the-main-site-navigation-and-routing-for-required-pages-home-about-beemedha-products-listing-product-detail-live-updates-news-certifications-quality-assurance-contact-us-plus-privacy-policy-terms-conditions",
+      "featureTitle": "Create the main site navigation and routing for required pages: Home, About Beemedha, Products (listing), Product Detail, Live Updates/News, Certifications & Quality Assurance, Contact Us, plus Privacy Policy, Terms & Conditions.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/layout/Footer.tsx",
+        "frontend/src/components/layout/Header.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-home-page-with-hero-section-featuring-tagline-pure-honey-straight-from-nature-high-quality-honey-beehive-visuals-primary-ctas-shop-now-explore-our-honey-and-a-trust-highlight-section-for-100-natural-no-adulteration-lab-tested",
+      "featureTitle": "Build the Home page with: hero section featuring tagline “Pure Honey, Straight from Nature”, high-quality honey/beehive visuals, primary CTAs (“Shop Now”, “Explore Our Honey”), and a trust highlight section for “100% Natural”, “No Adulteration”, “Lab Tested”.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/HomePage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-about-beemedha-page-describing-beemedha-s-story-and-commitment-to-purity-ethical-beekeeping-practices-and-sustainable-harvesting-methods-using-clear-sections-and-supportive-visuals",
+      "featureTitle": "Build the About Beemedha page describing Beemedha’s story and commitment to purity, ethical beekeeping practices, and sustainable harvesting methods, using clear sections and supportive visuals.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/AboutPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-products-listing-page-that-displays-product-cards-with-image-name-price-and-availability-status-supports-browsing-by-the-specified-categories-raw-forest-honey-organic-wild-honey-herbal-infused-honey-honey-comb-and-reflects-live-updates-from-the-backend",
+      "featureTitle": "Build the Products listing page that displays product cards with image, name, price, and availability status, supports browsing by the specified categories (Raw Forest Honey, Organic Wild Honey, Herbal Infused Honey, Honey Comb), and reflects live updates from the backend.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/products/ProductCard.tsx",
+        "frontend/src/hooks/useLiveUpdateConfig.ts",
+        "frontend/src/pages/ProductsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-product-detail-page-showing-detailed-description-nutritional-values-harvest-location-benefits-and-customer-reviews-display-current-price-and-availability-from-the-backend",
+      "featureTitle": "Build the Product Detail page showing: detailed description, nutritional values, harvest location, benefits, and customer reviews; display current price and availability from the backend.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/products/PurchasePlaceholder.tsx",
+        "frontend/src/pages/ProductDetailPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-live-updates-news-page-that-lists-announcements-updates-from-the-backend-with-clear-date-display-filtering-by-update-type-and-a-detail-view-expanded-reading-experience",
+      "featureTitle": "Build the Live Updates / News page that lists announcements/updates from the backend with clear date display, filtering by update type, and a detail view/expanded reading experience.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/news/NewsCard.tsx",
+        "frontend/src/pages/NewsDetailPage.tsx",
+        "frontend/src/pages/NewsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-9"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-create-the-certifications-quality-assurance-page-with-sections-for-lab-testing-details-organic-certifications-and-quality-seals-trust-badges-using-premium-badge-visuals-and-clean-content-hierarchy",
+      "featureTitle": "Create the Certifications & Quality Assurance page with sections for lab testing details, organic certifications, and quality seals/trust badges, using premium badge visuals and clean content hierarchy.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/CertificationsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-10"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-contact-us-page-with-a-contact-form-name-email-phone-message-a-whatsapp-chat-button-link-based-displayed-email-phone-details-and-an-embedded-google-maps-location-iframe-embed-or-map-link",
+      "featureTitle": "Build the Contact Us page with: a contact form (name, email/phone, message), a WhatsApp chat button (link-based), displayed email & phone details, and an embedded Google Maps location (iframe embed or map link).",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/ContactPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-11"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-a-global-footer-containing-social-media-links-newsletter-signup-and-links-to-privacy-policy-and-terms-conditions",
+      "featureTitle": "Implement a global Footer containing: social media links, newsletter signup, and links to Privacy Policy and Terms & Conditions.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/layout/Footer.tsx",
+        "frontend/src/pages/PrivacyPolicyPage.tsx",
+        "frontend/src/pages/TermsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-13"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-create-an-admin-panel-ui-for-managing-live-updates-including-crud-for-products-including-stock-status-price-images-categories-and-news-items-restrict-access-to-authenticated-admins-using-internet-identity",
+      "featureTitle": "Create an Admin panel UI for managing live updates, including CRUD for products (including stock status, price, images, categories) and news items; restrict access to authenticated admins using Internet Identity.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/admin/AdminRouteGuard.tsx",
+        "frontend/src/components/auth/LoginButton.tsx",
+        "frontend/src/pages/admin/AdminDashboardPage.tsx",
+        "frontend/src/pages/admin/AdminNewsPage.tsx",
+        "frontend/src/pages/admin/AdminProductsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-14"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-live-updates-behavior-on-the-frontend-using-react-query-polling-and-or-refetch-on-focus-so-product-availability-pricing-and-news-updates-refresh-without-manual-page-redesign-provide-a-visible-last-updated-timestamp-on-relevant-pages",
+      "featureTitle": "Implement “live updates” behavior on the frontend using React Query (polling and/or refetch-on-focus) so product availability/pricing and news updates refresh without manual page redesign; provide a visible “Last updated” timestamp on relevant pages.",
+      "files": [
+        "frontend/src/hooks/useLiveUpdateConfig.ts",
+        "frontend/src/pages/NewsPage.tsx",
+        "frontend/src/pages/ProductsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-15"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-technical-quality-fully-responsive-layouts-mobile-tablet-desktop-fast-loading-pages-optimize-images-and-avoid-unnecessary-heavy-assets-and-seo-optimized-structure-semantic-headings-per-page-titles-meta-descriptions-accessible-navigation",
+      "featureTitle": "Ensure technical quality: fully responsive layouts (mobile/tablet/desktop), fast-loading pages (optimize images and avoid unnecessary heavy assets), and SEO-optimized structure (semantic headings, per-page titles/meta descriptions, accessible navigation).",
+      "files": [
+        "frontend/index.html",
+        "frontend/src/components/layout/Header.tsx",
+        "frontend/src/hooks/usePageMeta.ts",
+        "frontend/src/pages/HomePage.tsx",
+        "frontend/src/pages/ProductsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-16"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-prepare-the-product-purchase-flow-ui-to-be-secure-checkout-ready-for-future-e-commerce-expansion-by-adding-non-functional-placeholders-e-g-add-to-cart-and-checkout-coming-soon-without-implementing-payments-or-external-integrations",
+      "featureTitle": "Prepare the product purchase flow UI to be “secure checkout ready” for future e-commerce expansion by adding non-functional placeholders (e.g., “Add to Cart” and “Checkout coming soon”) without implementing payments or external integrations.",
+      "files": [
+        "frontend/src/components/products/PurchasePlaceholder.tsx",
+        "frontend/src/pages/ProductDetailPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-17"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "frontend/src/pages/admin/AdminDashboardPage.tsx": "Admin dashboard landing page with navigation cards to manage products and news, includes admin access notice.",
+  "frontend/src/pages/admin/AdminProductsPage.tsx": "Admin page for managing products with full CRUD operations (create, read, update, delete) using dialogs and forms.",
+  "frontend/src/pages/admin/AdminNewsPage.tsx": "Admin page for managing news updates and announcements with create and delete operations, linked to products.",
+  "frontend/src/pages/TermsPage.tsx": "Terms and Conditions page displaying comprehensive legal terms for website use, orders, intellectual property, and liability with semantic HTML structure.",
+  "frontend/src/index.css": "Simple CSS file that imports the main stylesheet from the frontend root directory to satisfy the main.tsx import requirement."
+}
