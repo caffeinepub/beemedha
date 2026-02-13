@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
+import { useAdminSession } from './useAdminSession';
 import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants, Logo } from '../backend';
 import { useLiveUpdateConfig } from './useLiveUpdateConfig';
 import { Principal } from '@dfinity/principal';
@@ -56,6 +57,7 @@ export function useGetProduct(id: bigint | null) {
 
 export function useCreateProduct() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -70,7 +72,9 @@ export function useCreateProduct() {
       stock: bigint;
     }) => {
       if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Admin session required');
       return actor.createProduct(
+        sessionId,
         data.name,
         data.description,
         data.category,
@@ -89,6 +93,7 @@ export function useCreateProduct() {
 
 export function useUpdateProduct() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -104,7 +109,9 @@ export function useUpdateProduct() {
       stock: bigint;
     }) => {
       if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Admin session required');
       return actor.updateProduct(
+        sessionId,
         data.id,
         data.name,
         data.description,
@@ -125,12 +132,14 @@ export function useUpdateProduct() {
 
 export function useDeleteProduct() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.deleteProduct(id);
+      if (!sessionId) throw new Error('Admin session required');
+      return actor.deleteProduct(sessionId, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -140,15 +149,16 @@ export function useDeleteProduct() {
 
 export function useSeedProducts() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.seedProducts();
+      if (!sessionId) throw new Error('Admin session required');
+      return actor.seedProducts(sessionId);
     },
     onSuccess: async () => {
-      // Invalidate all product-related queries to ensure immediate UI update
       await queryClient.invalidateQueries({ queryKey: ['products'] });
       await queryClient.refetchQueries({ queryKey: ['products'] });
     },
@@ -203,6 +213,7 @@ export function useGetProductUpdatesByProduct(productId: bigint) {
 
 export function useCreateProductUpdate() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -212,7 +223,9 @@ export function useCreateProductUpdate() {
       message: string;
     }) => {
       if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Admin session required');
       return actor.createProductUpdate(
+        sessionId,
         data.productUpdateType,
         data.productId,
         data.message
@@ -226,12 +239,14 @@ export function useCreateProductUpdate() {
 
 export function useDeleteProductUpdate() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.deleteProductUpdate(id);
+      if (!sessionId) throw new Error('Admin session required');
+      return actor.deleteProductUpdate(sessionId, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productUpdates'] });
@@ -257,14 +272,15 @@ export function useSubmitContactForm() {
 
 export function useGetContactFormSubmissions() {
   const { actor, isFetching } = useActor();
+  const { sessionId } = useAdminSession();
 
   return useQuery<ContactFormSubmission[]>({
     queryKey: ['contactSubmissions'],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getContactFormSubmissions();
+      if (!actor || !sessionId) return [];
+      return actor.getContactFormSubmissions(sessionId);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && !!sessionId,
   });
 }
 
@@ -304,43 +320,38 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-// Admin Check - keyed to authenticated principal to prevent stale cache
+// Admin Management
 export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
-  const principalKey = identity?.getPrincipal().toString() || 'anonymous';
-
-  return useQuery<boolean>({
-    queryKey: ['isAdmin', principalKey],
+  const query = useQuery<boolean>({
+    queryKey: ['isAdmin', identity?.getPrincipal().toString()],
     queryFn: async () => {
       if (!actor) return false;
-      try {
-        return await actor.isCallerAdmin();
-      } catch (error) {
-        console.error('Admin check failed:', error);
-        return false;
-      }
+      return actor.isCallerAdmin();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching && !!identity,
     retry: false,
-    staleTime: 0, // Always refetch on mount to ensure fresh admin status
   });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+  };
 }
 
-// Admin Management
 export function useAddAdmin() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (principal: Principal) => {
+    mutationFn: async (newAdmin: Principal) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addAdmin(principal);
+      return actor.addAdmin(newAdmin);
     },
-    onSuccess: async () => {
-      // Invalidate admin check to refresh permissions
-      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
     },
   });
 }
@@ -350,13 +361,12 @@ export function useRemoveAdmin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (principal: Principal) => {
+    mutationFn: async (adminToRemove: Principal) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.removeAdmin(principal);
+      return actor.removeAdmin(adminToRemove);
     },
-    onSuccess: async () => {
-      // Invalidate admin check to refresh permissions
-      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
     },
   });
 }
@@ -364,6 +374,7 @@ export function useRemoveAdmin() {
 // Logo Management
 export function useGetLogo() {
   const { actor, isFetching } = useActor();
+  const { refetchInterval, refetchOnWindowFocus } = useLiveUpdateConfig();
 
   return useQuery<Logo | null>({
     queryKey: ['logo'],
@@ -372,22 +383,24 @@ export function useGetLogo() {
       return actor.getLogo();
     },
     enabled: !!actor && !isFetching,
-    retry: false,
+    refetchInterval,
+    refetchOnWindowFocus,
   });
 }
 
 export function useUpdateLogo() {
   const { actor } = useActor();
+  const { sessionId } = useAdminSession();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: { mimeType: string; data: Uint8Array }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateLogo(data.mimeType, data.data);
+      if (!sessionId) throw new Error('Admin session required');
+      return actor.updateLogo(sessionId, data.mimeType, data.data);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['logo'] });
-      await queryClient.refetchQueries({ queryKey: ['logo'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logo'] });
     },
   });
 }

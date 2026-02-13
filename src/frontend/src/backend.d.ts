@@ -29,6 +29,13 @@ export interface ProductUpdate {
     message: string;
     timestamp: Time;
 }
+export type CustomerIdentifier = {
+    __kind__: "email";
+    email: string;
+} | {
+    __kind__: "phone";
+    phone: string;
+};
 export interface Price {
     salePrice?: number;
     listPrice: number;
@@ -97,19 +104,27 @@ export enum UserRole {
 }
 export interface backendInterface {
     addAdmin(newAdmin: Principal): Promise<void>;
+    adminLogin(username: string, password: string): Promise<string | null>;
+    adminLogout(sessionId: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createProduct(name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<bigint>;
-    createProductUpdate(productUpdateType: ProductUpdateType, productId: bigint, message: string): Promise<bigint>;
-    deleteProduct(id: bigint): Promise<void>;
-    deleteProductUpdate(id: bigint): Promise<void>;
+    createProduct(sessionId: string, name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<bigint>;
+    createProductUpdate(sessionId: string, productUpdateType: ProductUpdateType, productId: bigint, message: string): Promise<bigint>;
+    customerLogout(sessionId: string): Promise<void>;
+    customerRequestOTP(identifier: CustomerIdentifier): Promise<boolean>;
+    customerVerifyOTP(identifier: CustomerIdentifier, otp: string): Promise<string | null>;
+    deleteProduct(sessionId: string, id: bigint): Promise<void>;
+    deleteProductUpdate(sessionId: string, id: bigint): Promise<void>;
     getAllProductUpdates(): Promise<Array<ProductUpdate>>;
     getAllProducts(): Promise<Array<Product>>;
+    getAllProductsAdmin(sessionId: string): Promise<Array<Product>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getContactFormSubmissions(): Promise<Array<ContactFormSubmission>>;
+    getContactFormSubmissions(sessionId: string): Promise<Array<ContactFormSubmission>>;
+    getCustomerSessionInfo(sessionId: string): Promise<CustomerIdentifier | null>;
     getLimitedProducts(): Promise<Array<Product>>;
     getLogo(): Promise<Logo | null>;
     getProduct(id: bigint): Promise<Product | null>;
+    getProductAdmin(sessionId: string, id: bigint): Promise<Product | null>;
     getProductUpdatesByProduct(productId: bigint): Promise<Array<ProductUpdate>>;
     getProductUpdatesByType(productUpdateType: ProductUpdateType): Promise<Array<ProductUpdate>>;
     getProductsByCategory(category: Category): Promise<Array<Product>>;
@@ -118,8 +133,10 @@ export interface backendInterface {
     promoteToUser(principal: Principal): Promise<void>;
     removeAdmin(adminToRemove: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    seedProducts(): Promise<SeedProductsResult>;
+    seedProducts(sessionId: string): Promise<SeedProductsResult>;
     submitContactForm(name: string, email: string, message: string): Promise<bigint>;
-    updateLogo(mimeType: string, data: Uint8Array): Promise<void>;
-    updateProduct(id: bigint, name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<void>;
+    updateLogo(sessionId: string, mimeType: string, data: Uint8Array): Promise<void>;
+    updateProduct(sessionId: string, id: bigint, name: string, description: string, category: Category, price: Price, image: string, availability: AvailabilityStatus, variants: ProductVariants | null, stock: bigint): Promise<void>;
+    validateAdminSession(sessionId: string): Promise<boolean>;
+    validateCustomerSession(sessionId: string): Promise<boolean>;
 }

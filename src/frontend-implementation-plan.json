@@ -1,6 +1,107 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Frontend plan: no changes required for backend admin bootstrap",
-  "requirements": []
+  "title": "Password-based admin login for /admin and customer email/phone OTP login UI",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Replace Internet Identity guarding for /admin with a dedicated password-based admin login page and client-side admin session that unlocks existing admin pages.",
+      "acceptanceCriteria": [
+        "Navigating to /#/admin shows an admin login form (username/email + password) instead of the current Internet Identity admin guard UI.",
+        "After logging in successfully, the user is routed to the admin dashboard and can navigate to /#/admin/products, /#/admin/news, /#/admin/logo, /#/admin/access without being blocked by Internet Identity checks.",
+        "If not logged in, any /#/admin/* route redirects to /#/admin and shows a clear 'Admin login required' message in English.",
+        "Admin logout clears the admin session on the client and returns the user to /#/admin."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/admin/AdminLoginPage.tsx",
+          "operation": "create",
+          "description": "Create a dedicated password-based admin login page with username/email + password form, English error messaging, and success navigation to the admin dashboard after receiving a valid admin session id from the backend capability."
+        },
+        {
+          "path": "frontend/src/hooks/useAdminSession.ts",
+          "operation": "create",
+          "description": "Add a client-side admin session hook to store/restore an admin session id (e.g., localStorage), validate it against the backend capability on app load, and provide login/logout helpers for the admin UI."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "operation": "modify",
+          "description": "Replace the Internet Identity-based guard with a password-admin session guard: if no valid admin session exists, redirect users to /admin and display an English 'Admin login required' message; otherwise render protected admin children."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update admin-only React Query mutations/queries used by the admin UI to accept and forward the password-admin session id (e.g., create/update/delete product, seed products, create/delete product update, update logo, view contact submissions) using the backend capabilities that require a session id; ensure Unauthorized errors are surfaced as English UI errors."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "operation": "modify",
+          "description": "Wire the password-admin session id into product create/edit/delete and seeding actions (via updated hooks) so the existing products admin UI works without Internet Identity prompts."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminNewsPage.tsx",
+          "operation": "modify",
+          "description": "Wire the password-admin session id into news (product updates) create/delete actions (via updated hooks) so the existing news admin UI works without Internet Identity prompts."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminLogoPage.tsx",
+          "operation": "modify",
+          "description": "Wire the password-admin session id into logo update actions (via updated hooks) so the existing logo admin UI works without Internet Identity prompts."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminAccessPage.tsx",
+          "operation": "modify",
+          "description": "Update the admin access page UI to avoid relying on Internet Identity state for its primary flow (and to use the password-admin session where applicable in updated hooks), ensuring the page remains reachable under the new password-admin login system."
+        },
+        {
+          "path": "frontend/src/components/layout/Header.tsx",
+          "operation": "modify",
+          "description": "Update header admin navigation and add an Admin Logout action that clears the password-admin session on the client and routes back to /admin; remove reliance on Internet Identity-based 'isAdmin' checks for showing the Admin link."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add customer login UI for email/phone identifier + OTP verification, showing logged-in state and logout without external SMS/email delivery.",
+      "acceptanceCriteria": [
+        "Frontend provides a customer login UI that accepts either an email address or a phone number and then prompts for an OTP.",
+        "Backend provides APIs to start an OTP login challenge and verify an OTP for the same identifier.",
+        "After OTP verification, frontend shows a logged-in customer state and provides a logout action.",
+        "If OTP is incorrect or expired, the UI shows an English error message and allows retry."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useCustomerSession.ts",
+          "operation": "create",
+          "description": "Create a customer auth hook that manages a customer session id on the client, calls backend capabilities to request OTP and verify OTP, fetches session info for displaying logged-in state, and supports logout/clearing state."
+        },
+        {
+          "path": "frontend/src/components/auth/CustomerLoginDialog.tsx",
+          "operation": "create",
+          "description": "Implement a customer login UI component with two screens (identifier input + OTP input) and a logged-in state view, using backend capabilities to request/verify OTP and showing English retryable error messaging."
+        },
+        {
+          "path": "frontend/src/components/layout/Header.tsx",
+          "operation": "modify",
+          "description": "Wire the customer login UI into the site header to provide access to identifier entry, OTP entry, and visible logged-in customer state plus logout action across the site."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Update TanStack Router configuration so /admin is the password-admin login page and /admin/* routes are protected by the new password-admin guard under hash routing.",
+      "acceptanceCriteria": [
+        "/admin renders the password-admin login page; it does not render the existing AdminDashboardPage directly.",
+        "/admin/* routes are inaccessible without password-admin login and redirect to /admin.",
+        "Non-admin routes (/ , /products, /news, etc.) still load as before."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update route registration to render the new AdminLoginPage at /admin and keep /admin/products, /admin/news, /admin/logo, /admin/access wrapped with the updated password-admin AdminRouteGuard; preserve existing hash routing behavior for all non-admin routes."
+        }
+      ]
+    }
+  ]
 }

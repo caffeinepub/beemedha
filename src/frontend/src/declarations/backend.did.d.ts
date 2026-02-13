@@ -23,6 +23,8 @@ export interface ContactFormSubmission {
   'message' : string,
   'timestamp' : Time,
 }
+export type CustomerIdentifier = { 'email' : string } |
+  { 'phone' : string };
 export interface FlavorVariant {
   'weight' : bigint,
   'flavor' : string,
@@ -73,9 +75,12 @@ export interface WeightVariant {
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addAdmin' : ActorMethod<[Principal], undefined>,
+  'adminLogin' : ActorMethod<[string, string], [] | [string]>,
+  'adminLogout' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createProduct' : ActorMethod<
     [
+      string,
       string,
       string,
       Category,
@@ -88,19 +93,31 @@ export interface _SERVICE {
     bigint
   >,
   'createProductUpdate' : ActorMethod<
-    [ProductUpdateType, bigint, string],
+    [string, ProductUpdateType, bigint, string],
     bigint
   >,
-  'deleteProduct' : ActorMethod<[bigint], undefined>,
-  'deleteProductUpdate' : ActorMethod<[bigint], undefined>,
+  'customerLogout' : ActorMethod<[string], undefined>,
+  'customerRequestOTP' : ActorMethod<[CustomerIdentifier], boolean>,
+  'customerVerifyOTP' : ActorMethod<
+    [CustomerIdentifier, string],
+    [] | [string]
+  >,
+  'deleteProduct' : ActorMethod<[string, bigint], undefined>,
+  'deleteProductUpdate' : ActorMethod<[string, bigint], undefined>,
   'getAllProductUpdates' : ActorMethod<[], Array<ProductUpdate>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
+  'getAllProductsAdmin' : ActorMethod<[string], Array<Product>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getContactFormSubmissions' : ActorMethod<[], Array<ContactFormSubmission>>,
+  'getContactFormSubmissions' : ActorMethod<
+    [string],
+    Array<ContactFormSubmission>
+  >,
+  'getCustomerSessionInfo' : ActorMethod<[string], [] | [CustomerIdentifier]>,
   'getLimitedProducts' : ActorMethod<[], Array<Product>>,
   'getLogo' : ActorMethod<[], [] | [Logo]>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
+  'getProductAdmin' : ActorMethod<[string, bigint], [] | [Product]>,
   'getProductUpdatesByProduct' : ActorMethod<[bigint], Array<ProductUpdate>>,
   'getProductUpdatesByType' : ActorMethod<
     [ProductUpdateType],
@@ -112,11 +129,12 @@ export interface _SERVICE {
   'promoteToUser' : ActorMethod<[Principal], undefined>,
   'removeAdmin' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'seedProducts' : ActorMethod<[], SeedProductsResult>,
+  'seedProducts' : ActorMethod<[string], SeedProductsResult>,
   'submitContactForm' : ActorMethod<[string, string, string], bigint>,
-  'updateLogo' : ActorMethod<[string, Uint8Array], undefined>,
+  'updateLogo' : ActorMethod<[string, string, Uint8Array], undefined>,
   'updateProduct' : ActorMethod<
     [
+      string,
       bigint,
       string,
       string,
@@ -129,6 +147,8 @@ export interface _SERVICE {
     ],
     undefined
   >,
+  'validateAdminSession' : ActorMethod<[string], boolean>,
+  'validateCustomerSession' : ActorMethod<[string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

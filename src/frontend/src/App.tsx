@@ -10,6 +10,7 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import CertificationsPage from './pages/CertificationsPage';
 import ContactPage from './pages/ContactPage';
 import TermsPage from './pages/TermsPage';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminNewsPage from './pages/admin/AdminNewsPage';
@@ -78,11 +79,7 @@ const termsRoute = createRoute({
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminDashboardPage />
-    </AdminRouteGuard>
-  ),
+  component: AdminLoginPage,
 });
 
 const ownerRoute = createRoute({

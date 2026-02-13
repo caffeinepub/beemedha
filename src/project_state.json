@@ -1,33 +1,77 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project includes admin access control so designated principals can access an admin panel to update products and details.",
+  "summary": "Project to add a dedicated admin login page and customer authentication. Admin uses a separate password-based login at /#/admin with access to manage product details; customers log in via email or phone with OTP verification.",
   "architectural_notes": [
-    "Admin authorization is based on the caller's principal; backend must maintain an allowlist of admin principals (must match the currently logged-in principal exactly)."
+    "Admin authentication should be separate from principal/Internet Identity and use password-based login for a single admin account.",
+    "Customer authentication should support email or phone number identifiers with OTP verification flow.",
+    "Admin route should be /#/admin and show editable product management UI only after successful admin login."
   ],
-  "known_issues": [
-    "Admin access error occurs when the logged-in principal is not included in the backend admin allowlist (principal mismatch between devices/sessions).",
-    "Production deployment for Version 18 initially failed with a deployment error (details unspecified)."
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-replace-the-current-internet-identity-based-protection-for-the-admin-route-so-that-https-beemedha-3zg-caffeine-xyz-admin-becomes-a-dedicated-password-based-admin-login-page-not-internet-identity-after-successful-login-allow-access-to-the-existing-admin-pages-dashboard-products-news-logo-access-without-prompting-for-internet-identity",
+      "title": "Replace the current Internet Identity-based protection for the /admin route so that https://beemedha-3zg.caffeine.xyz/#/admin becomes a dedicated password-based admin login page (not Internet Identity). After successful login, allow access to the existing admin pages (dashboard, products, news, logo, access) without prompting for Internet Identity.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-customer-authentication-flow-that-allows-customers-to-log-in-using-either-email-or-phone-number-and-verify-with-an-otp-challenge-provide-ui-screens-for-entering-email-phone-entering-otp-and-showing-logged-in-customer-state",
+      "title": "Add a customer authentication flow that allows customers to log in using either email or phone number and verify with an OTP challenge. Provide UI screens for: entering email/phone, entering OTP, and showing logged-in customer state.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-route-configuration-and-guards-in-frontend-src-app-tsx-are-updated-so-that-admin-and-admin-use-the-new-password-admin-guard-while-the-rest-of-the-site-continues-to-function-normally-under-hash-routing",
+      "title": "Ensure the route configuration and guards in frontend/src/App.tsx are updated so that /admin and /admin/* use the new password-admin guard, while the rest of the site continues to function normally under hash routing.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    }
   ],
-  "isFixRequest": true,
-  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement/administer backend admin access so specified principals can access the admin panel to update products and details (add principal to admin list).",
+      "summary": "Create dedicated admin login page at https://beemedha-3zg.caffeine.xyz/#/admin using separate password-based single admin account",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is granted the `#admin` role in the backend access-control state so this principal can access the admin panel and perform admin-only actions (e.g., create/update products, manage news, upload logo). This must work even when no admins currently exist (i.e., bootstrap an initial admin on install/upgrade if missing).",
+      "summary": "Admin portal functionality to add/edit/delete product details on the website after admin login",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Customer login system allowing email or phone number login with OTP verification",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Implement a single admin account authentication mechanism using the provided admin credentials: username \"Thejas Kinnigoli\", email \"thejasumeshpoojary7@gmail.com\", password \"78982qwertyuiop\". Do not store the password in plaintext; store and verify a one-way derived representation in the Motoko canister state.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Update all admin-only backend operations used by the admin UI (at minimum: create/update/delete product, create/delete product update, update logo, view contact submissions, seed products) so they authorize using the new password-admin session (or equivalent) rather than requiring the caller principal to have the #admin role via Internet Identity.",
+      "reqIds": [
+        "REQ-3"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Grant specified Internet Identity principal admin access in backend",
+  "projectName": "Add password-based admin login at /#/admin and customer email/phone OTP login",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

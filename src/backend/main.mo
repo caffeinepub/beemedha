@@ -10,10 +10,15 @@ import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
+import Char "mo:core/Char";
+import Nat32 "mo:core/Nat32";
+import Nat8 "mo:core/Nat8";
+import Blob "mo:core/Blob";
+import Random "mo:core/Random";
+import Option "mo:core/Option";
 
-(with migration = Migration.run)
 actor {
+  // Data types
   type Category = {
     #beeProducts;
     #naturalHoney;
@@ -93,19 +98,45 @@ actor {
     timestamp : Time.Time;
   };
 
-  public type UserRole = {
-    #guest;
-    #user;
-    #admin;
-  };
-
   public type UserProfile = {
     name : Text;
+    // Add other user-specific fields as needed
   };
 
   public type Logo = {
     mimeType : Text;
     data : [Nat8];
+  };
+
+  // Admin authentication types
+  public type AdminCredentials = {
+    username : Text;
+    email : Text;
+    passwordHash : Text;
+  };
+
+  public type AdminSession = {
+    sessionId : Text;
+    expiresAt : Time.Time;
+  };
+
+  // Customer authentication types
+  public type CustomerIdentifier = {
+    #email : Text;
+    #phone : Text;
+  };
+
+  public type OTPChallenge = {
+    identifier : CustomerIdentifier;
+    otpHash : Text;
+    expiresAt : Time.Time;
+    attempts : Nat;
+  };
+
+  public type CustomerSession = {
+    sessionId : Text;
+    identifier : CustomerIdentifier;
+    expiresAt : Time.Time;
   };
 
   var nextUpdateId = 0;
@@ -117,16 +148,239 @@ actor {
 
   var logo : ?Logo = null;
 
-  // Initialize access control state and bootstrap reserved admin
-  let accessControlState = AccessControl.initState();
-  
-  // Bootstrap the reserved admin principal on initialization
-  // This is now handled in migration
-  // let reservedAdminPrincipal = Principal.fromText("hn5no-h77le-pdphy-znrz7-glcca-32cpu-wj7mg-dcsiu-wrpap-x4adatb-nqe");
-  // AccessControl.initialize(accessControlState, reservedAdminPrincipal);
+  // Admin authentication state
+  var adminCredentials : ?AdminCredentials = null;
+  let adminSessions = Map.empty<Text, AdminSession>();
 
+  // Customer authentication state
+  let otpChallenges = Map.empty<Text, OTPChallenge>();
+  let customerSessions = Map.empty<Text, CustomerSession>();
+
+  // Session timeout constants (in nanoseconds)
+  let ADMIN_SESSION_TIMEOUT : Int = 24 * 60 * 60 * 1_000_000_000; // 24 hours
+  let CUSTOMER_SESSION_TIMEOUT : Int = 7 * 24 * 60 * 60 * 1_000_000_000; // 7 days
+  let OTP_TIMEOUT : Int = 10 * 60 * 1_000_000_000; // 10 minutes
+  let MAX_OTP_ATTEMPTS : Nat = 3;
+
+  // AccessControlState initialization
+  let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
+  // Initialize admin credentials with hashed password
+  func initializeAdminCredentials() {
+    if (adminCredentials.isNull()) {
+      let passwordHash = hashPassword("78982qwertyuiop");
+      adminCredentials := ?{
+        username = "Thejas Kinnigoli";
+        email = "thejasumeshpoojary7@gmail.com";
+        passwordHash = passwordHash;
+      };
+    };
+  };
+
+  // Simple password hashing (for demonstration purposes only)
+  func hashPassword(password : Text) : Text {
+    var hash : Nat32 = 5381;
+    for (char in password.chars()) {
+      hash := ((hash << 5) +% hash) +% Nat32.fromNat(char.toNat32().toNat());
+    };
+    hash.toText();
+  };
+
+  // Generate random session ID
+  func generateSessionId() : async Text {
+    let entropy = await Random.blob();
+    let bytes = entropy.toArray();
+    var sessionId = "";
+    for (byte in bytes.vals()) {
+      sessionId #= byte.toText();
+    };
+    sessionId;
+  };
+
+  // Generate random OTP (6 digits)
+  func generateOTP() : async Text {
+    let entropy = await Random.blob();
+    let bytes = entropy.toArray();
+    if (bytes.size() == 0) {
+      return "123456"; // Fallback
+    };
+    let num = Nat32.fromNat(bytes[0].toNat()) % 1000000;
+    let otp = num.toText();
+    // Pad with zeros to ensure 6 digits
+    let padding = 6 - otp.size();
+    var paddedOtp = "";
+    var i = 0;
+    while (i < padding) {
+      paddedOtp #= "0";
+      i += 1;
+    };
+    paddedOtp # otp;
+  };
+
+  // Check if admin session is valid
+  func isValidAdminSession(sessionId : Text) : Bool {
+    switch (adminSessions.get(sessionId)) {
+      case (null) { false };
+      case (?session) {
+        if (Time.now() > session.expiresAt) {
+          adminSessions.remove(sessionId);
+          false;
+        } else {
+          true;
+        };
+      };
+    };
+  };
+
+  // Check if customer session is valid
+  func isValidCustomerSession(sessionId : Text) : Bool {
+    switch (customerSessions.get(sessionId)) {
+      case (null) { false };
+      case (?session) {
+        if (Time.now() > session.expiresAt) {
+          customerSessions.remove(sessionId);
+          false;
+        } else {
+          true;
+        };
+      };
+    };
+  };
+
+  // Get identifier key for OTP challenges
+  func getIdentifierKey(identifier : CustomerIdentifier) : Text {
+    switch (identifier) {
+      case (#email(e)) { "email:" # e };
+      case (#phone(p)) { "phone:" # p };
+    };
+  };
+
+  // Admin authentication endpoints
+  public shared func adminLogin(username : Text, password : Text) : async ?Text {
+    initializeAdminCredentials();
+
+    switch (adminCredentials) {
+      case (null) { null };
+      case (?creds) {
+        if (creds.username == username and creds.passwordHash == hashPassword(password)) {
+          let sessionId = await generateSessionId();
+          let session : AdminSession = {
+            sessionId = sessionId;
+            expiresAt = Time.now() + ADMIN_SESSION_TIMEOUT;
+          };
+          adminSessions.add(sessionId, session);
+          ?sessionId;
+        } else {
+          null;
+        };
+      };
+    };
+  };
+
+  public shared func adminLogout(sessionId : Text) : async () {
+    adminSessions.remove(sessionId);
+  };
+
+  public query func validateAdminSession(sessionId : Text) : async Bool {
+    isValidAdminSession(sessionId);
+  };
+
+  // Customer authentication endpoints
+  public shared func customerRequestOTP(identifier : CustomerIdentifier) : async Bool {
+    let key = getIdentifierKey(identifier);
+
+    // Check if there's an existing challenge
+    switch (otpChallenges.get(key)) {
+      case (?existing) {
+        // If too many attempts, reject
+        if (existing.attempts >= MAX_OTP_ATTEMPTS) {
+          return false;
+        };
+      };
+      case (null) {};
+    };
+
+    let otp = await generateOTP();
+    let otpHash = hashPassword(otp);
+
+    let challenge : OTPChallenge = {
+      identifier = identifier;
+      otpHash = otpHash;
+      expiresAt = Time.now() + OTP_TIMEOUT;
+      attempts = 0;
+    };
+
+    otpChallenges.add(key, challenge);
+
+    // In production, send OTP via email/SMS
+    // For now, we just store it (in real app, don't log/return OTP)
+    true;
+  };
+
+  public shared func customerVerifyOTP(identifier : CustomerIdentifier, otp : Text) : async ?Text {
+    let key = getIdentifierKey(identifier);
+
+    switch (otpChallenges.get(key)) {
+      case (null) { null };
+      case (?challenge) {
+        if (Time.now() > challenge.expiresAt) {
+          otpChallenges.remove(key);
+          return null;
+        };
+
+        if (challenge.attempts >= MAX_OTP_ATTEMPTS) {
+          otpChallenges.remove(key);
+          return null;
+        };
+
+        if (challenge.otpHash == hashPassword(otp)) {
+          // OTP is correct, create session
+          otpChallenges.remove(key);
+
+          let sessionId = await generateSessionId();
+          let session : CustomerSession = {
+            sessionId = sessionId;
+            identifier = identifier;
+            expiresAt = Time.now() + CUSTOMER_SESSION_TIMEOUT;
+          };
+          customerSessions.add(sessionId, session);
+          ?sessionId;
+        } else {
+          // Increment attempts
+          let updatedChallenge = {
+            challenge with
+            attempts = challenge.attempts + 1;
+          };
+          otpChallenges.add(key, updatedChallenge);
+          null;
+        };
+      };
+    };
+  };
+
+  public shared func customerLogout(sessionId : Text) : async () {
+    customerSessions.remove(sessionId);
+  };
+
+  public query func validateCustomerSession(sessionId : Text) : async Bool {
+    isValidCustomerSession(sessionId);
+  };
+
+  public query func getCustomerSessionInfo(sessionId : Text) : async ?CustomerIdentifier {
+    switch (customerSessions.get(sessionId)) {
+      case (null) { null };
+      case (?session) {
+        if (Time.now() > session.expiresAt) {
+          null;
+        } else {
+          ?session.identifier;
+        };
+      };
+    };
+  };
+
+  // Backward compatibility: Principal-based admin management
   public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
     AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
   };
@@ -142,6 +396,7 @@ actor {
     AccessControl.assignRole(accessControlState, caller, principal, #user);
   };
 
+  // User profile management (requires customer session or Principal-based auth)
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -163,9 +418,10 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  public shared ({ caller }) func updateLogo(mimeType : Text, data : [Nat8]) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+  // Admin-only operations (require admin session)
+  public shared func updateLogo(sessionId : Text, mimeType : Text, data : [Nat8]) : async () {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
     if (mimeType == "" or data.size() == 0) {
       Runtime.trap("Invalid logo data");
@@ -173,12 +429,12 @@ actor {
     logo := ?{ mimeType; data };
   };
 
-  // Public query - logo is publicly accessible
-  public query ({ caller }) func getLogo() : async ?Logo {
+  public query func getLogo() : async ?Logo {
     logo;
   };
 
-  public shared ({ caller }) func createProduct(
+  public shared func createProduct(
+    sessionId : Text,
     name : Text,
     description : Text,
     category : Category,
@@ -188,8 +444,8 @@ actor {
     variants : ?ProductVariants,
     stock : Nat,
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
 
     let productId = products.size();
@@ -213,7 +469,8 @@ actor {
     productId;
   };
 
-  public shared ({ caller }) func updateProduct(
+  public shared func updateProduct(
+    sessionId : Text,
     id : Nat,
     name : Text,
     description : Text,
@@ -224,8 +481,8 @@ actor {
     variants : ?ProductVariants,
     stock : Nat,
   ) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
 
     let product = switch (products.get(id)) {
@@ -251,9 +508,9 @@ actor {
     products.add(id, updatedProduct);
   };
 
-  public shared ({ caller }) func deleteProduct(id : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+  public shared func deleteProduct(sessionId : Text, id : Nat) : async () {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
 
     let product = switch (products.get(id)) {
@@ -269,13 +526,14 @@ actor {
     products.add(id, updatedProduct);
   };
 
-  public shared ({ caller }) func createProductUpdate(
+  public shared func createProductUpdate(
+    sessionId : Text,
     productUpdateType : ProductUpdateType,
     productId : Nat,
     message : Text,
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
 
     let updateId = nextUpdateId;
@@ -292,9 +550,9 @@ actor {
     updateId;
   };
 
-  public shared ({ caller }) func deleteProductUpdate(id : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+  public shared func deleteProductUpdate(sessionId : Text, id : Nat) : async () {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
 
     switch (updates.get(id)) {
@@ -303,8 +561,22 @@ actor {
     };
   };
 
-  // Public function - anyone can submit contact form (including guests)
-  public shared ({ caller }) func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
+  public shared func getContactFormSubmissions(sessionId : Text) : async [ContactFormSubmission] {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
+    };
+    contacts.values().toArray();
+  };
+
+  public shared func seedProducts(sessionId : Text) : async SeedProductsResult {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
+    };
+    seedProductsInternal();
+  };
+
+  // Public endpoints (no authentication required)
+  public shared func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
     let contactId = nextContactId;
     nextContactId += 1;
     let submission = {
@@ -319,16 +591,15 @@ actor {
     contactId;
   };
 
-  func filterDeletedProducts(caller : Principal, product : Product) : Bool {
-    AccessControl.isAdmin(accessControlState, caller) or not product.isDeleted
+  func filterDeletedProducts(isAdmin : Bool, product : Product) : Bool {
+    isAdmin or not product.isDeleted;
   };
 
-  // Public query - products are publicly viewable (guests can see)
-  public query ({ caller }) func getProduct(id : Nat) : async ?Product {
+  public query func getProduct(id : Nat) : async ?Product {
     switch (products.get(id)) {
       case (null) { null };
       case (?product) {
-        if (filterDeletedProducts(caller, product)) {
+        if (not product.isDeleted) {
           ?product;
         } else {
           null;
@@ -337,31 +608,27 @@ actor {
     };
   };
 
-  // Public query - products are publicly viewable (guests can see)
-  public query ({ caller }) func getAllProducts() : async [Product] {
+  public query func getAllProducts() : async [Product] {
     products.values().toArray().filter(
       func(product) {
-        filterDeletedProducts(caller, product);
+        not product.isDeleted;
       }
     );
   };
 
-  // Public query - products are publicly viewable (guests can see)
-  public query ({ caller }) func getProductsByCategory(category : Category) : async [Product] {
+  public query func getProductsByCategory(category : Category) : async [Product] {
     products.values().toArray().filter(
       func(product) {
-        product.category == category and filterDeletedProducts(caller, product);
+        product.category == category and not product.isDeleted;
       }
     );
   };
 
-  // Public query - product updates are publicly viewable (guests can see)
-  public query ({ caller }) func getAllProductUpdates() : async [ProductUpdate] {
+  public query func getAllProductUpdates() : async [ProductUpdate] {
     updates.values().toArray();
   };
 
-  // Public query - product updates are publicly viewable (guests can see)
-  public query ({ caller }) func getProductUpdatesByType(productUpdateType : ProductUpdateType) : async [ProductUpdate] {
+  public query func getProductUpdatesByType(productUpdateType : ProductUpdateType) : async [ProductUpdate] {
     updates.values().toArray().filter(
       func(update) {
         update.productUpdateType == productUpdateType;
@@ -369,8 +636,7 @@ actor {
     );
   };
 
-  // Public query - product updates are publicly viewable (guests can see)
-  public query ({ caller }) func getProductUpdatesByProduct(productId : Nat) : async [ProductUpdate] {
+  public query func getProductUpdatesByProduct(productId : Nat) : async [ProductUpdate] {
     updates.values().toArray().filter(
       func(update) {
         update.productId == productId;
@@ -378,33 +644,32 @@ actor {
     );
   };
 
-  // Public query - limited products are publicly viewable (guests can see)
-  public query ({ caller }) func getLimitedProducts() : async [Product] {
+  public query func getLimitedProducts() : async [Product] {
     products.values().toArray().filter(
       func(product) {
-        product.availability == #limited and filterDeletedProducts(caller, product);
+        product.availability == #limited and not product.isDeleted;
       }
     );
   };
 
-  // Admin-only query - contact submissions are sensitive
-  public query ({ caller }) func getContactFormSubmissions() : async [ContactFormSubmission] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
+  // Admin endpoints with session parameter for viewing deleted products
+  public query func getProductAdmin(sessionId : Text, id : Nat) : async ?Product {
+    if (not isValidAdminSession(sessionId)) {
+      return null;
     };
-    contacts.values().toArray();
+    products.get(id);
+  };
+
+  public query func getAllProductsAdmin(sessionId : Text) : async [Product] {
+    if (not isValidAdminSession(sessionId)) {
+      return [];
+    };
+    products.values().toArray();
   };
 
   public type SeedProductsResult = {
     #seeded : { count : Nat };
     #alreadySeeded;
-  };
-
-  public shared ({ caller }) func seedProducts() : async SeedProductsResult {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-    seedProductsInternal();
   };
 
   func seedProductsInternal() : SeedProductsResult {
@@ -518,4 +783,7 @@ actor {
 
     #seeded { count = 4 };
   };
+
+  // Initialize admin credentials on first deployment
+  initializeAdminCredentials();
 };

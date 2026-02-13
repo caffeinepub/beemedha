@@ -1,129 +1,78 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Section, Container } from '../../components/brand/BrandPrimitives';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import { useGetLogo, useUpdateLogo } from '../../hooks/useQueries';
-import { logoToUrl, revokeLogoUrl } from '../../utils/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Section, Container, BrandCard } from '../../components/brand/BrandPrimitives';
-import { usePageMeta } from '../../hooks/usePageMeta';
-import { Upload, Image as ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Upload, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { logoToUrl } from '../../utils/logo';
 
 export default function AdminLogoPage() {
-  usePageMeta('Manage Logo', 'Upload and manage your site logo.');
-
-  const { data: logo, isLoading: logoLoading } = useGetLogo();
-  const updateLogoMutation = useUpdateLogo();
-
+  usePageMeta('Web Owner Dashboard', 'Upload and manage your site logo.');
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const currentLogoUrl = logoToUrl(logo);
+  const logoQuery = useGetLogo();
+  const updateMutation = useUpdateLogo();
 
-  // Clean up preview URL on unmount
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        revokeLogoUrl(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  // Clean up current logo URL on unmount
-  useEffect(() => {
-    return () => {
-      if (currentLogoUrl) {
-        revokeLogoUrl(currentLogoUrl);
-      }
-    };
-  }, [currentLogoUrl]);
+  const currentLogo = logoQuery.data;
+  const currentLogoUrl = currentLogo ? logoToUrl(currentLogo) : null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
     const file = e.target.files?.[0];
-
-    if (!file) {
-      setSelectedFile(null);
-      if (previewUrl) {
-        revokeLogoUrl(previewUrl);
-        setPreviewUrl(null);
-      }
-      return;
-    }
+    if (!file) return;
 
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-    if (!validTypes.includes(file.type)) {
-      setError('Please select a valid image file (JPEG, PNG, GIF, WebP, or SVG).');
-      setSelectedFile(null);
-      if (previewUrl) {
-        revokeLogoUrl(previewUrl);
-        setPreviewUrl(null);
-      }
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      e.target.value = '';
       return;
     }
 
     // Validate file size (max 2MB)
-    const maxSize = 2 * 1024 * 1024; // 2MB
-    if (file.size > maxSize) {
-      setError('File size must be less than 2MB.');
-      setSelectedFile(null);
-      if (previewUrl) {
-        revokeLogoUrl(previewUrl);
-        setPreviewUrl(null);
-      }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      e.target.value = '';
       return;
     }
 
     setSelectedFile(file);
 
     // Create preview
-    if (previewUrl) {
-      revokeLogoUrl(previewUrl);
-    }
-    const newPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(newPreviewUrl);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setError('Please select a file to upload.');
+      toast.error('Please select a file first');
       return;
     }
 
-    setError(null);
-
     try {
-      // Read file as ArrayBuffer
       const arrayBuffer = await selectedFile.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
 
-      // Upload to backend
-      await updateLogoMutation.mutateAsync({
+      await updateMutation.mutateAsync({
         mimeType: selectedFile.type,
         data: uint8Array,
       });
 
-      toast.success('Logo updated successfully!');
-
-      // Clear selection and preview
+      toast.success('Logo updated successfully');
       setSelectedFile(null);
-      if (previewUrl) {
-        revokeLogoUrl(previewUrl);
-        setPreviewUrl(null);
-      }
-
-      // Reset file input
-      const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Failed to upload logo';
-      setError(errorMessage);
+      setPreviewUrl(null);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to update logo';
       toast.error(errorMessage);
+      console.error(error);
     }
   };
 
@@ -131,99 +80,78 @@ export default function AdminLogoPage() {
     <div>
       <Section className="bg-muted/30 py-12">
         <Container>
-          <div className="text-center space-y-4">
-            <h1 className="text-5xl md:text-6xl font-serif font-bold">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-2">
               Manage Logo
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Upload and manage your site logo that appears in the header.
+            <p className="text-muted-foreground">
+              Upload and manage your site logo.
             </p>
           </div>
         </Container>
       </Section>
 
-      <Section>
+      <Section className="py-12">
         <Container>
-          <div className="max-w-3xl mx-auto space-y-8">
-            {/* Current Logo */}
-            <BrandCard className="p-6">
-              <h2 className="text-2xl font-serif font-bold mb-4">Current Logo</h2>
-              {logoLoading ? (
-                <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              ) : currentLogoUrl ? (
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-full max-w-md h-48 flex items-center justify-center bg-muted rounded-lg p-4">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">Current Logo</CardTitle>
+                <CardDescription>
+                  This logo is displayed in the header across your site
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentLogoUrl ? (
+                  <div className="flex justify-center p-8 bg-muted rounded-lg">
                     <img
                       src={currentLogoUrl}
                       alt="Current logo"
-                      className="max-h-full max-w-full object-contain"
+                      className="max-h-32 w-auto object-contain"
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    This logo is displayed in the header of your website.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-48 bg-muted rounded-lg space-y-2">
-                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">No logo uploaded yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    The default logo will be displayed until you upload a custom one.
-                  </p>
-                </div>
-              )}
-            </BrandCard>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No logo uploaded yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Upload New Logo */}
-            <BrandCard className="p-6">
-              <h2 className="text-2xl font-serif font-bold mb-4">Upload New Logo</h2>
-              
-              <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">Upload New Logo</CardTitle>
+                <CardDescription>
+                  Select an image file to replace the current logo
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Recommended: PNG or SVG format with transparent background. Maximum file size: 2MB.
+                  </AlertDescription>
+                </Alert>
+
                 <div>
-                  <Label htmlFor="logo-upload" className="text-base font-medium">
-                    Select Image File
-                  </Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Supported formats: JPEG, PNG, GIF, WebP, SVG (max 2MB)
-                  </p>
+                  <Label htmlFor="logo">Select Logo File</Label>
                   <Input
-                    id="logo-upload"
+                    id="logo"
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+                    accept="image/*"
                     onChange={handleFileChange}
-                    disabled={updateLogoMutation.isPending}
-                    className="cursor-pointer"
+                    className="mt-2"
                   />
                 </div>
 
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {selectedFile && !error && (
-                  <Alert>
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertTitle>File Selected</AlertTitle>
-                    <AlertDescription>
-                      {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 {previewUrl && (
                   <div>
-                    <Label className="text-base font-medium mb-2 block">Preview</Label>
-                    <div className="w-full max-w-md h-48 flex items-center justify-center bg-muted rounded-lg p-4 mx-auto">
+                    <Label>Preview</Label>
+                    <div className="mt-2 flex justify-center p-8 bg-muted rounded-lg">
                       <img
                         src={previewUrl}
-                        alt="Logo preview"
-                        className="max-h-full max-w-full object-contain"
+                        alt="Preview"
+                        className="max-h-32 w-auto object-contain"
                       />
                     </div>
                   </div>
@@ -231,40 +159,14 @@ export default function AdminLogoPage() {
 
                 <Button
                   onClick={handleUpload}
-                  disabled={!selectedFile || !!error || updateLogoMutation.isPending}
+                  disabled={!selectedFile || updateMutation.isPending}
                   className="w-full bg-primary hover:bg-primary/90"
                 >
-                  {updateLogoMutation.isPending ? (
-                    <>
-                      <Upload className="mr-2 h-4 w-4 animate-pulse" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Logo
-                    </>
-                  )}
+                  <Upload className="h-4 w-4 mr-2" />
+                  {updateMutation.isPending ? 'Uploading...' : 'Upload Logo'}
                 </Button>
-              </div>
-            </BrandCard>
-
-            {/* Info Card */}
-            <BrandCard className="p-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-              <div className="flex items-start gap-4">
-                <ImageIcon className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">Logo Guidelines</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                    <li>Use a square or horizontal logo for best results</li>
-                    <li>Recommended size: 200x200 pixels or larger</li>
-                    <li>Transparent background (PNG) works best</li>
-                    <li>The logo will be displayed at approximately 48x48 pixels in the header</li>
-                    <li>Changes take effect immediately across the entire site</li>
-                  </ul>
-                </div>
-              </div>
-            </BrandCard>
+              </CardContent>
+            </Card>
           </div>
         </Container>
       </Section>

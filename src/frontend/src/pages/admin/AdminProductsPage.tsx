@@ -475,8 +475,24 @@ export default function AdminProductsPage() {
                         onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                         required
                         className="mt-2"
-                        placeholder="0"
                       />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="availability">Availability *</Label>
+                      <Select
+                        value={formData.availability}
+                        onValueChange={(value) => setFormData({ ...formData, availability: value as AvailabilityStatus })}
+                      >
+                        <SelectTrigger className="mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="inStock">In Stock</SelectItem>
+                          <SelectItem value="limited">Limited</SelectItem>
+                          <SelectItem value="outOfStock">Out of Stock</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
@@ -487,12 +503,12 @@ export default function AdminProductsPage() {
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         required
                         className="mt-2"
-                        rows={3}
+                        rows={4}
                       />
                     </div>
 
                     <div>
-                      <Label>Variant Options (Optional)</Label>
+                      <Label>Product Variants (Optional)</Label>
                       <Select
                         value={formData.variantType}
                         onValueChange={(value) => setFormData({ ...formData, variantType: value as 'none' | 'weight' | 'flavor' })}
@@ -502,55 +518,72 @@ export default function AdminProductsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">No Variants</SelectItem>
-                          <SelectItem value="weight">Weight Variants (250g, 500g, 1000g)</SelectItem>
-                          <SelectItem value="flavor">Type Variants (MULTIFLORA, Raw & Unprocessed, etc.)</SelectItem>
+                          <SelectItem value="weight">Weight Variants</SelectItem>
+                          <SelectItem value="flavor">Flavor Variants</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {formData.variantType === 'weight' && (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <Label>Weight Variants</Label>
-                          <Button type="button" size="sm" onClick={addWeightVariant}>
+                          <Button type="button" onClick={addWeightVariant} size="sm" variant="outline">
                             <Plus className="h-4 w-4 mr-1" />
-                            Add Weight
+                            Add Variant
                           </Button>
                         </div>
                         {formData.weightVariants.map((variant, index) => (
-                          <div key={index} className="border p-3 rounded space-y-2">
+                          <div key={index} className="border p-4 rounded-lg space-y-3">
                             <div className="flex justify-between items-center">
                               <span className="text-sm font-medium">Variant {index + 1}</span>
-                              <Button type="button" size="sm" variant="ghost" onClick={() => removeWeightVariant(index)}>
+                              <Button
+                                type="button"
+                                onClick={() => removeWeightVariant(index)}
+                                size="sm"
+                                variant="ghost"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                placeholder="Weight (g)"
-                                type="number"
-                                value={variant.weight}
-                                onChange={(e) => updateWeightVariant(index, 'weight', e.target.value)}
-                              />
-                              <Input
-                                placeholder="Description"
-                                value={variant.description}
-                                onChange={(e) => updateWeightVariant(index, 'description', e.target.value)}
-                              />
-                              <Input
-                                placeholder="List Price"
-                                type="number"
-                                step="0.01"
-                                value={variant.listPrice}
-                                onChange={(e) => updateWeightVariant(index, 'listPrice', e.target.value)}
-                              />
-                              <Input
-                                placeholder="Sale Price (optional)"
-                                type="number"
-                                step="0.01"
-                                value={variant.salePrice}
-                                onChange={(e) => updateWeightVariant(index, 'salePrice', e.target.value)}
-                              />
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label>Weight (g)</Label>
+                                <Input
+                                  type="number"
+                                  value={variant.weight}
+                                  onChange={(e) => updateWeightVariant(index, 'weight', e.target.value)}
+                                  placeholder="250"
+                                />
+                              </div>
+                              <div>
+                                <Label>Description</Label>
+                                <Input
+                                  value={variant.description}
+                                  onChange={(e) => updateWeightVariant(index, 'description', e.target.value)}
+                                  placeholder="250g jar"
+                                />
+                              </div>
+                              <div>
+                                <Label>Price (₹)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.listPrice}
+                                  onChange={(e) => updateWeightVariant(index, 'listPrice', e.target.value)}
+                                  placeholder="100.00"
+                                />
+                              </div>
+                              <div>
+                                <Label>Sale Price (₹)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.salePrice}
+                                  onChange={(e) => updateWeightVariant(index, 'salePrice', e.target.value)}
+                                  placeholder="Optional"
+                                />
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -558,54 +591,73 @@ export default function AdminProductsPage() {
                     )}
 
                     {formData.variantType === 'flavor' && (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                          <Label>Type Variants</Label>
-                          <Button type="button" size="sm" onClick={addFlavorVariant}>
+                          <Label>Flavor Variants</Label>
+                          <Button type="button" onClick={addFlavorVariant} size="sm" variant="outline">
                             <Plus className="h-4 w-4 mr-1" />
-                            Add Type
+                            Add Variant
                           </Button>
                         </div>
                         {formData.flavorVariants.map((variant, index) => (
-                          <div key={index} className="border p-3 rounded space-y-2">
+                          <div key={index} className="border p-4 rounded-lg space-y-3">
                             <div className="flex justify-between items-center">
                               <span className="text-sm font-medium">Variant {index + 1}</span>
-                              <Button type="button" size="sm" variant="ghost" onClick={() => removeFlavorVariant(index)}>
+                              <Button
+                                type="button"
+                                onClick={() => removeFlavorVariant(index)}
+                                size="sm"
+                                variant="ghost"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                placeholder="Type (e.g., MULTIFLORA)"
-                                value={variant.flavor}
-                                onChange={(e) => updateFlavorVariant(index, 'flavor', e.target.value)}
-                              />
-                              <Input
-                                placeholder="Weight (g)"
-                                type="number"
-                                value={variant.weight}
-                                onChange={(e) => updateFlavorVariant(index, 'weight', e.target.value)}
-                              />
-                              <Input
-                                placeholder="Description"
-                                value={variant.description}
-                                onChange={(e) => updateFlavorVariant(index, 'description', e.target.value)}
-                                className="col-span-2"
-                              />
-                              <Input
-                                placeholder="List Price"
-                                type="number"
-                                step="0.01"
-                                value={variant.listPrice}
-                                onChange={(e) => updateFlavorVariant(index, 'listPrice', e.target.value)}
-                              />
-                              <Input
-                                placeholder="Sale Price (optional)"
-                                type="number"
-                                step="0.01"
-                                value={variant.salePrice}
-                                onChange={(e) => updateFlavorVariant(index, 'salePrice', e.target.value)}
-                              />
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label>Flavor</Label>
+                                <Input
+                                  value={variant.flavor}
+                                  onChange={(e) => updateFlavorVariant(index, 'flavor', e.target.value)}
+                                  placeholder="Raw Forest"
+                                />
+                              </div>
+                              <div>
+                                <Label>Weight (g)</Label>
+                                <Input
+                                  type="number"
+                                  value={variant.weight}
+                                  onChange={(e) => updateFlavorVariant(index, 'weight', e.target.value)}
+                                  placeholder="1000"
+                                />
+                              </div>
+                              <div className="col-span-2">
+                                <Label>Description</Label>
+                                <Input
+                                  value={variant.description}
+                                  onChange={(e) => updateFlavorVariant(index, 'description', e.target.value)}
+                                  placeholder="1kg jar of raw forest honey"
+                                />
+                              </div>
+                              <div>
+                                <Label>Price (₹)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.listPrice}
+                                  onChange={(e) => updateFlavorVariant(index, 'listPrice', e.target.value)}
+                                  placeholder="350.00"
+                                />
+                              </div>
+                              <div>
+                                <Label>Sale Price (₹)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.salePrice}
+                                  onChange={(e) => updateFlavorVariant(index, 'salePrice', e.target.value)}
+                                  placeholder="Optional"
+                                />
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -614,11 +666,22 @@ export default function AdminProductsPage() {
 
                     <DialogFooter>
                       <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
                         type="submit"
                         disabled={createMutation.isPending || updateMutation.isPending}
                         className="bg-primary hover:bg-primary/90"
                       >
-                        {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : 'Save Product'}
+                        {createMutation.isPending || updateMutation.isPending
+                          ? 'Saving...'
+                          : editingProduct
+                          ? 'Update Product'
+                          : 'Create Product'}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -629,150 +692,139 @@ export default function AdminProductsPage() {
         </Container>
       </Section>
 
-      <Section>
+      <Section className="py-12">
         <Container>
-          <BrandCard className="p-6 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <Label htmlFor="search" className="sr-only">Search products</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div className="w-full md:w-48">
-                <Label htmlFor="category-filter" className="sr-only">Filter by category</Label>
-                <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as Category | 'all')}>
-                  <SelectTrigger id="category-filter">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="beeProducts">Bee Products</SelectItem>
-                    <SelectItem value="naturalHoney">Natural Honey</SelectItem>
-                    <SelectItem value="rawHoney">Raw Honey</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-full md:w-48">
-                <Label htmlFor="low-stock-threshold">Low Stock Alert</Label>
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="low-stock-threshold"
-                  type="number"
-                  min="0"
-                  value={lowStockThreshold}
-                  onChange={(e) => setLowStockThreshold(parseInt(e.target.value) || 0)}
-                  placeholder="Threshold"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
+              <Select
+                value={categoryFilter}
+                onValueChange={(value) => setCategoryFilter(value as Category | 'all')}
+              >
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="beeProducts">Bee Products</SelectItem>
+                  <SelectItem value="naturalHoney">Natural Honey</SelectItem>
+                  <SelectItem value="rawHoney">Raw Honey</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              Total: <span className="font-semibold">{filteredProducts.length}</span> product{filteredProducts.length !== 1 ? 's' : ''}
-            </div>
-          </BrandCard>
 
-          {productsQuery.isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading products...</p>
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <BrandCard className="p-12 text-center">
-              <p className="text-muted-foreground">No products found. Add your first product to get started.</p>
-            </BrandCard>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-20">Image</TableHead>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Discount</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => (
-                    <TableRow key={product.id.toString()} className={isLowStock(product.stock) ? 'bg-amber-50 dark:bg-amber-950/20' : ''}>
-                      <TableCell>
-                        <img
-                          src={normalizeAssetUrl(product.image)}
-                          alt={product.name}
-                          className="h-12 w-12 object-cover rounded"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{getCategoryLabel(product.category)}</Badge>
-                      </TableCell>
-                      <TableCell>₹{product.price.listPrice.toFixed(2)}</TableCell>
-                      <TableCell>
-                        {product.price.salePrice ? (
-                          <Badge variant="secondary">₹{product.price.salePrice.toFixed(2)}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span>{product.stock.toString()}</span>
-                          {isLowStock(product.stock) && (
-                            <Badge variant="destructive" className="text-xs">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Low
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenDialog(product)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setDeleteProductId(product.id)}
-                            className="text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            {productsQuery.isLoading ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading products...</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No products found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Image</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Stock</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProducts.map((product) => (
+                      <TableRow key={product.id.toString()}>
+                        <TableCell>
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="h-12 w-12 object-cover rounded"
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{getCategoryLabel(product.category)}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <PriceDisplay price={product.price} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{product.stock.toString()}</span>
+                            {isLowStock(product.stock) && (
+                              <AlertTriangle className="h-4 w-4 text-warning" />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              product.availability === 'inStock'
+                                ? 'default'
+                                : product.availability === 'limited'
+                                ? 'secondary'
+                                : 'destructive'
+                            }
+                          >
+                            {product.availability === 'inStock'
+                              ? 'In Stock'
+                              : product.availability === 'limited'
+                              ? 'Limited'
+                              : 'Out of Stock'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDialog(product)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteProductId(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
         </Container>
       </Section>
 
-      <AlertDialog open={deleteProductId !== null} onOpenChange={(open) => !open && setDeleteProductId(null)}>
+      <AlertDialog open={deleteProductId !== null} onOpenChange={() => setDeleteProductId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this product? This action will soft-delete the product and it will no longer appear in public listings.
+              This action cannot be undone. This will permanently delete the product.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={deleteMutation.isPending}
               className="bg-destructive hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}

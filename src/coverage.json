@@ -1,34 +1,106 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T15:36:50.200Z",
+  "generatedAt": "2026-02-13T16:33:10.314Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 0,
+    "total": 5,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is granted the `#admin` role in the backend access-control state so this principal can access the admin panel and perform admin-only actions (e.g., create/update products, manage news, upload logo). This must work even when no admins currently exist (i.e., bootstrap an initial admin on install/upgrade if missing).",
+        "summary": "Replace the current Internet Identity-based protection for the /admin route so that https://beemedha-3zg.caffeine.xyz/#/admin becomes a dedicated password-based admin login page (not Internet Identity). After successful login, allow access to the existing admin pages (dashboard, products, news, logo, access) without prompting for Internet Identity.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/admin/AdminLoginPage.tsx",
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/src/pages/admin/AdminNewsPage.tsx",
+          "frontend/src/pages/admin/AdminLogoPage.tsx",
+          "frontend/src/pages/admin/AdminAccessPage.tsx",
+          "frontend/src/components/layout/Header.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/admin/AdminLoginPage.tsx",
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/admin/AdminRouteGuard.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/admin/AdminProductsPage.tsx",
+          "frontend/src/pages/admin/AdminNewsPage.tsx",
+          "frontend/src/pages/admin/AdminLogoPage.tsx",
+          "frontend/src/pages/admin/AdminAccessPage.tsx",
+          "frontend/src/components/layout/Header.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Implement a single admin account authentication mechanism using the provided admin credentials: username \"Thejas Kinnigoli\", email \"thejasumeshpoojary7@gmail.com\", password \"78982qwertyuiop\". Do not store the password in plaintext; store and verify a one-way derived representation in the Motoko canister state.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Update all admin-only backend operations used by the admin UI (at minimum: create/update/delete product, create/delete product update, update logo, view contact submissions, seed products) so they authorize using the new password-admin session (or equivalent) rather than requiring the caller principal to have the #admin role via Internet Identity.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Add a customer authentication flow that allows customers to log in using either email or phone number and verify with an OTP challenge. Provide UI screens for: entering email/phone, entering OTP, and showing logged-in customer state.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useCustomerSession.ts",
+          "frontend/src/components/auth/CustomerLoginDialog.tsx",
+          "frontend/src/components/layout/Header.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useCustomerSession.ts",
+          "frontend/src/components/auth/CustomerLoginDialog.tsx",
+          "frontend/src/components/layout/Header.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Ensure the route configuration and guards in frontend/src/App.tsx are updated so that /admin and /admin/* use the new password-admin guard, while the rest of the site continues to function normally under hash routing.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
+    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
+    "frontend/src/components/admin/AdminRouteGuard.tsx",
+    "frontend/src/components/auth/CustomerLoginDialog.tsx",
+    "frontend/src/components/layout/Header.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/hooks/useCustomerSession.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/admin/AdminAccessPage.tsx",
+    "frontend/src/pages/admin/AdminLoginPage.tsx",
+    "frontend/src/pages/admin/AdminLogoPage.tsx",
+    "frontend/src/pages/admin/AdminNewsPage.tsx",
+    "frontend/src/pages/admin/AdminProductsPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

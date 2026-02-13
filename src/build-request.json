@@ -1,39 +1,115 @@
 {
   "kind": "build_request",
-  "title": "Grant specified Internet Identity principal admin access in backend",
-  "priority": "high",
+  "title": "Add password-based admin login at /#/admin and customer email/phone OTP login",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is granted the `#admin` role in the backend access-control state so this principal can access the admin panel and perform admin-only actions (e.g., create/update products, manage news, upload logo). This must work even when no admins currently exist (i.e., bootstrap an initial admin on install/upgrade if missing).",
-      "target": "backend",
+      "text": "Replace the current Internet Identity-based protection for the /admin route so that https://beemedha-3zg.caffeine.xyz/#/admin becomes a dedicated password-based admin login page (not Internet Identity). After successful login, allow access to the existing admin pages (dashboard, products, news, logo, access) without prompting for Internet Identity.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-10",
-          "msg-11"
+          "msg-1"
         ],
         "quotes": [
-          "add this principal as admin :zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe",
-          "build"
+          "change this as admin page to login https://beemedha-3zg.caffeine.xyz/#/admin",
+          "want a completely separate password-based login system"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in as principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe`, `useIsCallerAdmin()` returns true and `AdminRouteGuard` allows access to `/admin/*` routes.",
-        "As principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe`, admin-only backend methods (e.g., `createProduct`, `updateProduct`, `createProductUpdate`, `updateLogo`) no longer trap with unauthorized.",
-        "The change does not remove or downgrade any existing admins already stored in the canister state.",
-        "On a fresh deploy with empty state, the specified principal is still able to access admin pages without needing a pre-existing admin to call `addAdmin`."
+        "Navigating to /#/admin shows an admin login form (username/email + password) instead of the current Internet Identity admin guard UI.",
+        "After logging in successfully, the user is routed to the admin dashboard and can navigate to /#/admin/products, /#/admin/news, /#/admin/logo, /#/admin/access without being blocked by Internet Identity checks.",
+        "If not logged in, any /#/admin/* route redirects to /#/admin and shows a clear 'Admin login required' message in English.",
+        "Admin logout clears the admin session on the client and returns the user to /#/admin."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Implement a single admin account authentication mechanism using the provided admin credentials: username \"Thejas Kinnigoli\", email \"thejasumeshpoojary7@gmail.com\", password \"78982qwertyuiop\". Do not store the password in plaintext; store and verify a one-way derived representation in the Motoko canister state.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "User name : Thejas Kinnigoli + add email id : thejasumeshpoojary7@gmail.com+ Password : 78982qwertyuiop"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes an API to authenticate the admin with the provided credentials and returns a session/token (or equivalent) that can be used by the frontend to prove admin login for subsequent admin-only operations.",
+        "Password is not stored or compared as plaintext in canister state.",
+        "Admin authentication fails with a generic error message for incorrect credentials (no information leakage about which field is wrong)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update all admin-only backend operations used by the admin UI (at minimum: create/update/delete product, create/delete product update, update logo, view contact submissions, seed products) so they authorize using the new password-admin session (or equivalent) rather than requiring the caller principal to have the #admin role via Internet Identity.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "make a separate admin login page where admin can only update to add or edit product details to  website",
+          "when i use my details it should open admin page which is editable"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A user who is not logged in as password-admin cannot successfully call admin-only backend methods and receives an Unauthorized error.",
+        "A user who is logged in as password-admin can successfully create/update/delete products through the existing AdminProductsPage UI.",
+        "Existing public product browsing (home/products/product detail/news) remains accessible without admin login."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add a customer authentication flow that allows customers to log in using either email or phone number and verify with an OTP challenge. Provide UI screens for: entering email/phone, entering OTP, and showing logged-in customer state.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "For customer login, should users be able to log in using either email or phone number and verify with otp"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend provides a customer login UI that accepts either an email address or a phone number and then prompts for an OTP.",
+        "Backend provides APIs to start an OTP login challenge and verify an OTP for the same identifier.",
+        "After OTP verification, frontend shows a logged-in customer state and provides a logout action.",
+        "If OTP is incorrect or expired, the UI shows an English error message and allows retry."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Ensure the route configuration and guards in frontend/src/App.tsx are updated so that /admin and /admin/* use the new password-admin guard, while the rest of the site continues to function normally under hash routing.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "change this as admin page to login https://beemedha-3zg.caffeine.xyz/#/admin"
+        ]
+      },
+      "acceptanceCriteria": [
+        "/admin renders the password-admin login page; it does not render the existing AdminDashboardPage directly.",
+        "/admin/* routes are inaccessible without password-admin login and redirect to /admin.",
+        "Non-admin routes (/ , /products, /news, etc.) still load as before."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo`.",
-    "Generate/modify `backend/migration.mo` only if needed to preserve/upgrade existing stable state (conditional migration policy).",
-    "Do not edit files in `frontend/src/components/ui` or the immutable hook entrypoints listed in SYSTEM_CONTEXT."
+    "Use English for all user-facing UI text.",
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit files under frontend/src/components/ui or the immutable hook paths (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx). Compose new auth logic alongside them instead of modifying them.",
+    "No third-party authentication providers beyond what is already in the project; implement password-admin and customer OTP within the app.",
+    "No SMS/email delivery integrations are available in this environment; OTP verification must be implemented without relying on external messaging services."
   ],
   "nonGoals": [
-    "Implementing alternative authentication providers (only Internet Identity).",
-    "Adding new admin UX flows beyond making the specified principal an admin in the backend.",
-    "Diagnosing unrelated deployment pipeline errors unless directly required to make the admin change take effect."
+    "Supporting multiple admin accounts (must remain a single admin account).",
+    "Implementing real SMS or email OTP delivery via external providers.",
+    "Integrating third-party auth systems (e.g., Auth0, Google OAuth outside Internet Identity).",
+    "Adding payments/checkout or real-time messaging features."
   ],
   "imageRequirements": {
     "required": [],

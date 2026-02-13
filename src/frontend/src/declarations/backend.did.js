@@ -48,6 +48,10 @@ export const ProductUpdateType = IDL.Variant({
   'newHarvest' : IDL.Null,
   'limitedTimeOffer' : IDL.Null,
 });
+export const CustomerIdentifier = IDL.Variant({
+  'email' : IDL.Text,
+  'phone' : IDL.Text,
+});
 export const Time = IDL.Int;
 export const ProductUpdate = IDL.Record({
   'id' : IDL.Nat,
@@ -90,9 +94,12 @@ export const SeedProductsResult = IDL.Variant({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addAdmin' : IDL.Func([IDL.Principal], [], []),
+  'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], []),
+  'adminLogout' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createProduct' : IDL.Func(
       [
+        IDL.Text,
         IDL.Text,
         IDL.Text,
         Category,
@@ -106,24 +113,42 @@ export const idlService = IDL.Service({
       [],
     ),
   'createProductUpdate' : IDL.Func(
-      [ProductUpdateType, IDL.Nat, IDL.Text],
+      [IDL.Text, ProductUpdateType, IDL.Nat, IDL.Text],
       [IDL.Nat],
       [],
     ),
-  'deleteProduct' : IDL.Func([IDL.Nat], [], []),
-  'deleteProductUpdate' : IDL.Func([IDL.Nat], [], []),
+  'customerLogout' : IDL.Func([IDL.Text], [], []),
+  'customerRequestOTP' : IDL.Func([CustomerIdentifier], [IDL.Bool], []),
+  'customerVerifyOTP' : IDL.Func(
+      [CustomerIdentifier, IDL.Text],
+      [IDL.Opt(IDL.Text)],
+      [],
+    ),
+  'deleteProduct' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'deleteProductUpdate' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'getAllProductUpdates' : IDL.Func([], [IDL.Vec(ProductUpdate)], ['query']),
   'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getAllProductsAdmin' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getContactFormSubmissions' : IDL.Func(
-      [],
+      [IDL.Text],
       [IDL.Vec(ContactFormSubmission)],
+      [],
+    ),
+  'getCustomerSessionInfo' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(CustomerIdentifier)],
       ['query'],
     ),
   'getLimitedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getLogo' : IDL.Func([], [IDL.Opt(Logo)], ['query']),
   'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
+  'getProductAdmin' : IDL.Func(
+      [IDL.Text, IDL.Nat],
+      [IDL.Opt(Product)],
+      ['query'],
+    ),
   'getProductUpdatesByProduct' : IDL.Func(
       [IDL.Nat],
       [IDL.Vec(ProductUpdate)],
@@ -144,11 +169,12 @@ export const idlService = IDL.Service({
   'promoteToUser' : IDL.Func([IDL.Principal], [], []),
   'removeAdmin' : IDL.Func([IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'seedProducts' : IDL.Func([], [SeedProductsResult], []),
+  'seedProducts' : IDL.Func([IDL.Text], [SeedProductsResult], []),
   'submitContactForm' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
-  'updateLogo' : IDL.Func([IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
+  'updateLogo' : IDL.Func([IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
   'updateProduct' : IDL.Func(
       [
+        IDL.Text,
         IDL.Nat,
         IDL.Text,
         IDL.Text,
@@ -162,6 +188,8 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'validateCustomerSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
 });
 
 export const idlInitArgs = [];
@@ -207,6 +235,10 @@ export const idlFactory = ({ IDL }) => {
     'newHarvest' : IDL.Null,
     'limitedTimeOffer' : IDL.Null,
   });
+  const CustomerIdentifier = IDL.Variant({
+    'email' : IDL.Text,
+    'phone' : IDL.Text,
+  });
   const Time = IDL.Int;
   const ProductUpdate = IDL.Record({
     'id' : IDL.Nat,
@@ -249,9 +281,12 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addAdmin' : IDL.Func([IDL.Principal], [], []),
+    'adminLogin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], []),
+    'adminLogout' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createProduct' : IDL.Func(
         [
+          IDL.Text,
           IDL.Text,
           IDL.Text,
           Category,
@@ -265,24 +300,42 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'createProductUpdate' : IDL.Func(
-        [ProductUpdateType, IDL.Nat, IDL.Text],
+        [IDL.Text, ProductUpdateType, IDL.Nat, IDL.Text],
         [IDL.Nat],
         [],
       ),
-    'deleteProduct' : IDL.Func([IDL.Nat], [], []),
-    'deleteProductUpdate' : IDL.Func([IDL.Nat], [], []),
+    'customerLogout' : IDL.Func([IDL.Text], [], []),
+    'customerRequestOTP' : IDL.Func([CustomerIdentifier], [IDL.Bool], []),
+    'customerVerifyOTP' : IDL.Func(
+        [CustomerIdentifier, IDL.Text],
+        [IDL.Opt(IDL.Text)],
+        [],
+      ),
+    'deleteProduct' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'deleteProductUpdate' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'getAllProductUpdates' : IDL.Func([], [IDL.Vec(ProductUpdate)], ['query']),
     'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getAllProductsAdmin' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getContactFormSubmissions' : IDL.Func(
-        [],
+        [IDL.Text],
         [IDL.Vec(ContactFormSubmission)],
+        [],
+      ),
+    'getCustomerSessionInfo' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(CustomerIdentifier)],
         ['query'],
       ),
     'getLimitedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getLogo' : IDL.Func([], [IDL.Opt(Logo)], ['query']),
     'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
+    'getProductAdmin' : IDL.Func(
+        [IDL.Text, IDL.Nat],
+        [IDL.Opt(Product)],
+        ['query'],
+      ),
     'getProductUpdatesByProduct' : IDL.Func(
         [IDL.Nat],
         [IDL.Vec(ProductUpdate)],
@@ -307,15 +360,16 @@ export const idlFactory = ({ IDL }) => {
     'promoteToUser' : IDL.Func([IDL.Principal], [], []),
     'removeAdmin' : IDL.Func([IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'seedProducts' : IDL.Func([], [SeedProductsResult], []),
+    'seedProducts' : IDL.Func([IDL.Text], [SeedProductsResult], []),
     'submitContactForm' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text],
         [IDL.Nat],
         [],
       ),
-    'updateLogo' : IDL.Func([IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
+    'updateLogo' : IDL.Func([IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
     'updateProduct' : IDL.Func(
         [
+          IDL.Text,
           IDL.Nat,
           IDL.Text,
           IDL.Text,
@@ -329,6 +383,8 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'validateCustomerSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   });
 };
 

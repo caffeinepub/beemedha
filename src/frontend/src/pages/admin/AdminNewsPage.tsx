@@ -1,24 +1,29 @@
 import { useState } from 'react';
-import { Section, Container, BrandCard } from '../../components/brand/BrandPrimitives';
+import { Section, Container } from '../../components/brand/BrandPrimitives';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { useGetAllProductUpdates, useGetAllProducts, useCreateProductUpdate, useDeleteProductUpdate } from '../../hooks/useQueries';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
-import type { ProductUpdateType } from '../../backend';
+import type { ProductUpdate, ProductUpdateType } from '../../backend';
 
 export default function AdminNewsPage() {
-  usePageMeta('Manage News', 'Create and manage news updates and announcements.');
+  usePageMeta('Web Owner Dashboard', 'Manage news and product updates.');
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteUpdateId, setDeleteUpdateId] = useState<bigint | null>(null);
+  
   const [formData, setFormData] = useState({
-    productUpdateType: 'newHarvest' as ProductUpdateType,
     productId: '',
+    updateType: 'newHarvest' as ProductUpdateType,
     message: '',
   });
 
@@ -30,20 +35,6 @@ export default function AdminNewsPage() {
   const updates = updatesQuery.data || [];
   const products = productsQuery.data || [];
 
-  // Sort by timestamp descending
-  const sortedUpdates = [...updates].sort((a, b) => 
-    Number(b.timestamp) - Number(a.timestamp)
-  );
-
-  const handleOpenDialog = () => {
-    setFormData({
-      productUpdateType: 'newHarvest' as ProductUpdateType,
-      productId: products.length > 0 ? products[0].id.toString() : '',
-      message: '',
-    });
-    setIsDialogOpen(true);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -52,43 +43,68 @@ export default function AdminNewsPage() {
       return;
     }
 
+    if (!formData.message.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+
     try {
       await createMutation.mutateAsync({
-        productUpdateType: formData.productUpdateType,
+        productUpdateType: formData.updateType,
         productId: BigInt(formData.productId),
         message: formData.message,
       });
       toast.success('News update created successfully');
       setIsDialogOpen(false);
-    } catch (error) {
-      toast.error('Failed to create news update');
+      setFormData({
+        productId: '',
+        updateType: 'newHarvest' as ProductUpdateType,
+        message: '',
+      });
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to create news update';
+      toast.error(errorMessage);
       console.error(error);
     }
   };
 
-  const handleDelete = async (id: bigint) => {
-    if (!confirm('Are you sure you want to delete this news update?')) {
-      return;
-    }
+  const handleDeleteConfirm = async () => {
+    if (!deleteUpdateId) return;
 
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync(deleteUpdateId);
       toast.success('News update deleted successfully');
-    } catch (error) {
-      toast.error('Failed to delete news update');
+      setDeleteUpdateId(null);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to delete news update';
+      toast.error(errorMessage);
       console.error(error);
     }
   };
 
-  const getUpdateTypeBadge = (type: ProductUpdateType) => {
-    const typeMap: Record<ProductUpdateType, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-      newHarvest: { label: 'New Harvest', variant: 'default' },
-      seasonalAvailability: { label: 'Seasonal', variant: 'secondary' },
-      priceUpdate: { label: 'Price Update', variant: 'outline' },
-      limitedTimeOffer: { label: 'Limited Offer', variant: 'default' },
+  const getUpdateTypeLabel = (type: ProductUpdateType): string => {
+    const labels: Record<ProductUpdateType, string> = {
+      newHarvest: 'New Harvest',
+      seasonalAvailability: 'Seasonal Availability',
+      priceUpdate: 'Price Update',
+      limitedTimeOffer: 'Limited Time Offer',
     };
-    const config = typeMap[type];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return labels[type];
+  };
+
+  const getUpdateTypeBadgeVariant = (type: ProductUpdateType) => {
+    const variants: Record<ProductUpdateType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      newHarvest: 'default',
+      seasonalAvailability: 'secondary',
+      priceUpdate: 'outline',
+      limitedTimeOffer: 'destructive',
+    };
+    return variants[type];
+  };
+
+  const getProductName = (productId: bigint): string => {
+    const product = products.find(p => p.id === productId);
+    return product?.name || 'Unknown Product';
   };
 
   return (
@@ -101,12 +117,12 @@ export default function AdminNewsPage() {
                 Manage News
               </h1>
               <p className="text-muted-foreground">
-                Create and manage news updates and announcements.
+                Create and manage product updates and announcements.
               </p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleOpenDialog} className="bg-primary hover:bg-primary/90">
+                <Button className="bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4 mr-2" />
                   Add News Update
                 </Button>
@@ -119,25 +135,7 @@ export default function AdminNewsPage() {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="updateType">Update Type *</Label>
-                    <Select
-                      value={formData.productUpdateType}
-                      onValueChange={(value) => setFormData({ ...formData, productUpdateType: value as ProductUpdateType })}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newHarvest">New Harvest</SelectItem>
-                        <SelectItem value="seasonalAvailability">Seasonal Availability</SelectItem>
-                        <SelectItem value="priceUpdate">Price Update</SelectItem>
-                        <SelectItem value="limitedTimeOffer">Limited Time Offer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="product">Related Product *</Label>
+                    <Label htmlFor="product">Product *</Label>
                     <Select
                       value={formData.productId}
                       onValueChange={(value) => setFormData({ ...formData, productId: value })}
@@ -153,11 +151,24 @@ export default function AdminNewsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {products.length === 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        No products available. Please create a product first.
-                      </p>
-                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="updateType">Update Type *</Label>
+                    <Select
+                      value={formData.updateType}
+                      onValueChange={(value) => setFormData({ ...formData, updateType: value as ProductUpdateType })}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newHarvest">New Harvest</SelectItem>
+                        <SelectItem value="seasonalAvailability">Seasonal Availability</SelectItem>
+                        <SelectItem value="priceUpdate">Price Update</SelectItem>
+                        <SelectItem value="limitedTimeOffer">Limited Time Offer</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
@@ -167,19 +178,24 @@ export default function AdminNewsPage() {
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       required
-                      className="mt-2 min-h-[150px]"
+                      className="mt-2"
+                      rows={4}
                       placeholder="Enter your news update message..."
                     />
                   </div>
 
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
+                      disabled={createMutation.isPending}
                       className="bg-primary hover:bg-primary/90"
-                      disabled={createMutation.isPending || products.length === 0}
                     >
                       {createMutation.isPending ? 'Creating...' : 'Create Update'}
                     </Button>
@@ -191,63 +207,70 @@ export default function AdminNewsPage() {
         </Container>
       </Section>
 
-      <Section>
+      <Section className="py-12">
         <Container>
           {updatesQuery.isLoading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading news updates...</p>
             </div>
-          ) : sortedUpdates.length === 0 ? (
+          ) : updates.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No news updates yet. Create your first update!</p>
+              <p className="text-muted-foreground">No news updates yet</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {sortedUpdates.map((update) => {
-                const product = products.find(p => p.id === update.productId);
-                const date = new Date(Number(update.timestamp) / 1000000);
-                
-                return (
-                  <BrandCard key={update.id.toString()} className="p-6">
-                    <div className="flex flex-col sm:flex-row justify-between gap-4">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex flex-wrap items-center gap-3">
-                          {getUpdateTypeBadge(update.productUpdateType)}
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {date.toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            })}
-                          </div>
-                        </div>
-                        <p className="text-foreground whitespace-pre-wrap">{update.message}</p>
-                        {product && (
-                          <p className="text-sm text-muted-foreground">
-                            Related to: <span className="font-medium">{product.name}</span>
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex sm:flex-col gap-2">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(update.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 sm:mr-0 mr-1" />
-                          <span className="sm:hidden">Delete</span>
-                        </Button>
-                      </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {updates.map((update) => (
+                <Card key={update.id.toString()}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <Badge variant={getUpdateTypeBadgeVariant(update.productUpdateType)}>
+                        {getUpdateTypeLabel(update.productUpdateType)}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteUpdateId(update.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </BrandCard>
-                );
-              })}
+                    <CardTitle className="font-serif text-xl mt-2">
+                      {getProductName(update.productId)}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(Number(update.timestamp) / 1_000_000).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{update.message}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </Container>
       </Section>
+
+      <AlertDialog open={deleteUpdateId !== null} onOpenChange={() => setDeleteUpdateId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the news update.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
