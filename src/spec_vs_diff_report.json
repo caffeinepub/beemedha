@@ -1,45 +1,40 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T19:29:08.058Z",
-  "summary": "The diff adds/adjusts backend admin-management functions using an AccessControl module, but it does not show any explicit, conditional upgrade-time grant of admin role to the specified principal, nor any upgrade hooks/state-preservation logic tied to that requirement. It also introduces general admin-management APIs and project_state.json updates that were not requested.",
+  "generatedAt": "2026-02-13T15:36:50.197Z",
+  "summary": "REQ-1 (bootstrap specified principal as admin on install/upgrade without removing existing admins) is not implemented: the new migration does not modify access-control state, and main.mo no longer bootstraps any reserved admin (and the commented principal differs from the requested one). Additionally, project_state.json changes appear unrelated to the BuildRequest.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
-      "reason": "In the shown backend changes, there is no evidence of this specific principal being assigned/admin-whitelisted by default (e.g., via initialization or an upgrade-time migration). The only principal explicitly referenced is a different \"initialAdminPrincipal\" in removeAdmin.",
+      "requirement": "Grant Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` the `#admin` role in backend access-control state, including bootstrapping on fresh install/upgrade when no admins exist, without removing/downgrading existing admins.",
+      "reason": "No code in the diff assigns `#admin` to the specified principal during initialization or migration. The added migration function returns state unchanged, and main.mo only contains commented-out bootstrapping for a different principal, explicitly stating bootstrapping is 'handled in migration' (but migration does nothing).",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
-      "reason": "The diff summary does not show any upgrade/migration mechanism (e.g., preupgrade/postupgrade hooks, stable state serialization/restoration, or an idempotent 'ensure admin' step during upgrade) that would conditionally add the specified principal while preserving existing state.",
-      "evidence": [
+        "backend/migration.mo",
         "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added general admin-management endpoints (addAdmin, removeAdmin, promoteToUser) beyond the specific request to grant one principal admin and ensure upgrade migration.",
-      "reason": "BuildRequest only asks to grant a specific principal admin and implement an upgrade-time, conditional migration; it does not request new public APIs for managing admins/users.",
-      "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Modified/added project tracking metadata in project_state.json describing new feature requests (AR-1/AR-2/AR-3).",
-      "reason": "The BuildRequest does not mention updating project_state.json or adding project-management metadata as part of the implementation.",
+      "description": "Added/updated project tracking metadata (project_state.json) describing feature requests and status.",
+      "reason": "Not requested by the BuildRequest; requirements focus solely on backend access-control bootstrapping for a specific principal.",
       "evidence": [
         "project_state.json"
       ]
+    },
+    {
+      "description": "Introduced a migration module and wired migration into the actor, but it performs no upgrade logic (no-op migration).",
+      "reason": "BuildRequest allows modifying/adding migration only if needed to preserve/upgrade stable state; the added migration does not implement the requested admin bootstrap and may be unnecessary as-is.",
+      "evidence": [
+        "backend/migration.mo",
+        "backend/main.mo"
+      ]
     }
   ],
-  "confidence": 0.63,
+  "confidence": 0.78,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "project_state.json"
   ]
 }

@@ -1,10 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Grant the Internet Identity principal `ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe` admin access (multi-admin) while preserving existing canister state across upgrades.
+**Goal:** Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is always granted `#admin` access in the backend so they can use the admin panel and admin-only features.
 
 **Planned changes:**
-- Add the specified principal to the backend’s admin role list so admin-only route guards and APIs recognize them as an admin.
-- Implement a safe, conditional upgrade behavior that preserves all existing stored data and ensures the admin grant is applied idempotently (does not break existing admins, no duplicate/failed upgrades).
+- Update backend access-control state initialization to include the specified principal as `#admin` (bootstrap on fresh install when no admins exist).
+- Ensure upgrades preserve any existing stored admins and add the specified principal if missing (use migration only if required to maintain stable state compatibility).
 
-**User-visible outcome:** When logged in via Internet Identity as the specified principal, the user can access all `/admin` routes and admin-only actions without seeing “Access Denied,” including after upgrading an already-deployed canister with existing data.
+**User-visible outcome:** When logged in as principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe`, admin routes (`/admin/*`) and admin-only actions (e.g., create/update products, manage news, upload logo) work without “unauthorized,” even on a fresh deploy with empty state.

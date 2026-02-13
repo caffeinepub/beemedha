@@ -1,25 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T19:29:08.061Z",
+  "generatedAt": "2026-02-13T15:36:50.200Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
+    "total": 1,
     "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
+        "summary": "Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is granted the `#admin` role in the backend access-control state so this principal can access the admin panel and perform admin-only actions (e.g., create/update products, manage news, upload logo). This must work even when no admins currently exist (i.e., bootstrap an initial admin on install/upgrade if missing).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
@@ -28,6 +21,7 @@
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-implementation-plan.json",

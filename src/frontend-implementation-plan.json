@@ -1,6 +1,6 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Frontend-only plan: No changes required for adding admin principal",
+  "title": "Frontend plan: no changes required for backend admin bootstrap",
   "requirements": []
 }

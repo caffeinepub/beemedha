@@ -1,57 +1,39 @@
 {
   "kind": "build_request",
-  "title": "Add Thejas principal (ekphf-6psww-...) as an admin",
-  "priority": "normal",
+  "title": "Grant specified Internet Identity principal admin access in backend",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
+      "text": "Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is granted the `#admin` role in the backend access-control state so this principal can access the admin panel and perform admin-only actions (e.g., create/update products, manage news, upload logo). This must work even when no admins currently exist (i.e., bootstrap an initial admin on install/upgrade if missing).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-10",
+          "msg-11"
         ],
         "quotes": [
-          "ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe",
-          "add this as an admin for Thejas",
-          "build it"
+          "add this principal as admin :zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe",
+          "build"
         ]
       },
       "acceptanceCriteria": [
-        "After deployment/upgrade, calling the backend 'isCallerAdmin' (used by the frontend admin route guard) returns true for caller principal ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe.",
-        "When logged in with Internet Identity as that principal, the user can access all /admin routes without seeing the 'Access Denied' screen.",
-        "The change does not remove or weaken existing access control checks for admin-only backend APIs (e.g., create/update/delete products, product updates, contacts, logo update)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "build it",
-          "add this as an admin for Thejas"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Upgrading a canister that already has data preserves all existing state (products, updates, contacts, profiles, logo).",
-        "If the principal ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe is already an admin, the upgrade is idempotent (no errors; role remains admin).",
-        "If the principal is not yet an admin, it becomes an admin after upgrade (verified via the same admin-check query used by the frontend)."
+        "When logged in as principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe`, `useIsCallerAdmin()` returns true and `AdminRouteGuard` allows access to `/admin/*` routes.",
+        "As principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe`, admin-only backend methods (e.g., `createProduct`, `updateProduct`, `createProductUpdate`, `updateLogo`) no longer trap with unauthorized.",
+        "The change does not remove or downgrade any existing admins already stored in the canister state.",
+        "On a fresh deploy with empty state, the specified principal is still able to access admin pages without needing a pre-existing admin to call `addAdmin`."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit files under frontend/src/components/ui or other frontend immutable paths defined in SYSTEM_CONTEXT.",
-    "Use English for any user-facing text."
+    "Backend must remain a single Motoko actor in `backend/main.mo`.",
+    "Generate/modify `backend/migration.mo` only if needed to preserve/upgrade existing stable state (conditional migration policy).",
+    "Do not edit files in `frontend/src/components/ui` or the immutable hook entrypoints listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Building a UI to map principals to human names (e.g., displaying 'Thejas' in-app).",
-    "Adding third-party authentication providers beyond Internet Identity.",
-    "Adding real-time notifications or messaging around admin changes."
+    "Implementing alternative authentication providers (only Internet Identity).",
+    "Adding new admin UX flows beyond making the specified principal an admin in the backend.",
+    "Diagnosing unrelated deployment pipeline errors unless directly required to make the admin change take effect."
   ],
   "imageRequirements": {
     "required": [],

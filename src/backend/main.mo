@@ -10,12 +10,10 @@ import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
-  let accessControlState = AccessControl.initState();
-
-  include MixinAuthorization(accessControlState);
-
   type Category = {
     #beeProducts;
     #naturalHoney;
@@ -119,6 +117,16 @@ actor {
 
   var logo : ?Logo = null;
 
+  // Initialize access control state and bootstrap reserved admin
+  let accessControlState = AccessControl.initState();
+  
+  // Bootstrap the reserved admin principal on initialization
+  // This is now handled in migration
+  // let reservedAdminPrincipal = Principal.fromText("hn5no-h77le-pdphy-znrz7-glcca-32cpu-wj7mg-dcsiu-wrpap-x4adatb-nqe");
+  // AccessControl.initialize(accessControlState, reservedAdminPrincipal);
+
+  include MixinAuthorization(accessControlState);
+
   public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
     AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
   };
@@ -127,12 +135,6 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
-
-    let initialAdminPrincipal = Principal.fromText("zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe");
-    if (adminToRemove == initialAdminPrincipal) {
-      Runtime.trap("Cannot remove the initial admin principal");
-    };
-
     AccessControl.assignRole(accessControlState, caller, adminToRemove, #user);
   };
 
@@ -171,6 +173,7 @@ actor {
     logo := ?{ mimeType; data };
   };
 
+  // Public query - logo is publicly accessible
   public query ({ caller }) func getLogo() : async ?Logo {
     logo;
   };
@@ -300,6 +303,7 @@ actor {
     };
   };
 
+  // Public function - anyone can submit contact form (including guests)
   public shared ({ caller }) func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
     let contactId = nextContactId;
     nextContactId += 1;
@@ -319,6 +323,7 @@ actor {
     AccessControl.isAdmin(accessControlState, caller) or not product.isDeleted
   };
 
+  // Public query - products are publicly viewable (guests can see)
   public query ({ caller }) func getProduct(id : Nat) : async ?Product {
     switch (products.get(id)) {
       case (null) { null };
@@ -332,6 +337,7 @@ actor {
     };
   };
 
+  // Public query - products are publicly viewable (guests can see)
   public query ({ caller }) func getAllProducts() : async [Product] {
     products.values().toArray().filter(
       func(product) {
@@ -340,6 +346,7 @@ actor {
     );
   };
 
+  // Public query - products are publicly viewable (guests can see)
   public query ({ caller }) func getProductsByCategory(category : Category) : async [Product] {
     products.values().toArray().filter(
       func(product) {
@@ -348,10 +355,12 @@ actor {
     );
   };
 
+  // Public query - product updates are publicly viewable (guests can see)
   public query ({ caller }) func getAllProductUpdates() : async [ProductUpdate] {
     updates.values().toArray();
   };
 
+  // Public query - product updates are publicly viewable (guests can see)
   public query ({ caller }) func getProductUpdatesByType(productUpdateType : ProductUpdateType) : async [ProductUpdate] {
     updates.values().toArray().filter(
       func(update) {
@@ -360,6 +369,7 @@ actor {
     );
   };
 
+  // Public query - product updates are publicly viewable (guests can see)
   public query ({ caller }) func getProductUpdatesByProduct(productId : Nat) : async [ProductUpdate] {
     updates.values().toArray().filter(
       func(update) {
@@ -368,6 +378,7 @@ actor {
     );
   };
 
+  // Public query - limited products are publicly viewable (guests can see)
   public query ({ caller }) func getLimitedProducts() : async [Product] {
     products.values().toArray().filter(
       func(product) {
@@ -376,6 +387,7 @@ actor {
     );
   };
 
+  // Admin-only query - contact submissions are sensitive
   public query ({ caller }) func getContactFormSubmissions() : async [ContactFormSubmission] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can perform this action");

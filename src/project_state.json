@@ -1,38 +1,33 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with admin management: maintain an admin list and allow adding multiple Internet Identity principals as admins (e.g., for Thejas Umesh Poojary).",
+  "summary": "Project includes admin access control so designated principals can access an admin panel to update products and details.",
   "architectural_notes": [
-    "Use an admin list that supports multiple Internet Identity principals; allow adding an admin by supplying a principal ID."
+    "Admin authorization is based on the caller's principal; backend must maintain an allowlist of admin principals (must match the currently logged-in principal exactly)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Admin access error occurs when the logged-in principal is not included in the backend admin allowlist (principal mismatch between devices/sessions).",
+    "Production deployment for Version 18 initially failed with a deployment error (details unspecified)."
+  ],
+  "isFixRequest": true,
   "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add admin management to support multiple Internet Identity principals and allow adding new admins by principal ID (e.g., add Thejas as admin).",
+      "summary": "Implement/administer backend admin access so specified principals can access the admin panel to update products and details (add principal to admin list).",
       "reqIds": [],
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "id": "AR-2",
-      "summary": "Ensure the Internet Identity principal \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" is granted the admin role (multi-admin) so they can access all admin-only routes and APIs.",
+      "summary": "Ensure the Internet Identity principal `zq4an-uqz34-isqap-u5moy-4rxll-vz3ff-ndqph-gvmn5-hqe6u-o6j3v-yqe` is granted the `#admin` role in the backend access-control state so this principal can access the admin panel and perform admin-only actions (e.g., create/update products, manage news, upload logo). This must work even when no admins currently exist (i.e., bootstrap an initial admin on install/upgrade if missing).",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Implement a safe, conditional upgrade path so existing deployed canister state gains the admin role for \"ekphf-6psww-nfwx5-qaowa-goqyc-hgqqa-4m57p-3xfjb-kb73d-joktd-sqe\" without losing existing data (products, updates, contacts, profiles, logo) and without breaking current admins.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "status": "pending"
     }
   ],
-  "projectName": "Add Thejas principal (ekphf-6psww-...) as an admin",
+  "projectName": "Grant specified Internet Identity principal admin access in backend",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
