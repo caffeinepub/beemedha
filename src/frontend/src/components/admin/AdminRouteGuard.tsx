@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { Loader2 } from 'lucide-react';
+import { safeNavigate } from '../../utils/safeNavigate';
 
 interface AdminRouteGuardProps {
   children: ReactNode;
@@ -12,13 +13,12 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only redirect after validation completes
     if (!isValidating && !isAuthenticated) {
-      navigate({ to: '/admin' });
+      safeNavigate(navigate, '/admin/login', { replace: true });
     }
   }, [isAuthenticated, isValidating, navigate]);
 
-  // Show loading state during validation
+  // Show loading only during initial validation
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -30,11 +30,7 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
     );
   }
 
-  // Don't render anything if not authenticated (redirect will happen)
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  // Render protected content
-  return <>{children}</>;
+  // Don't render null flash - if not authenticated, the redirect will handle it
+  // Only render children when authenticated
+  return isAuthenticated ? <>{children}</> : null;
 }

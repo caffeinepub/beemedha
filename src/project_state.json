@@ -1,48 +1,32 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Website UI enhancements: add a global animated neon/glow background effect and implement a functional sidebar close (X) button with a slide-out close animation.",
-  "architectural_notes": [
-    "Add global neon/glow background animation as a site-wide effect (e.g., via CSS/Canvas) with configurable intensity/performance considerations.",
-    "Sidebar close interaction should animate (slide-out) before hiding/unmounting the sidebar. Direction (left vs right) needs confirmation."
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [
-    "Sidebar slide-out direction is ambiguous (user answered 'yes' to left/right); requires clarification to ensure correct behavior."
+    "Admin page flickers after a click; began after recent layout changes, blocking access."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-apply-a-global-animated-neon-glow-background-effect-across-the-entire-website-all-routes-not-just-within-specific-panels-while-keeping-all-ui-content-interactive-no-blocking-pointer-events-and-ensuring-legible-contrast-for-text-icons",
-      "title": "Apply a global animated neon/glow background effect across the entire website (all routes), not just within specific panels, while keeping all UI content interactive (no blocking pointer events) and ensuring legible contrast for text/icons.",
+      "id": "feature-stop-the-admin-ui-from-flickering-after-a-click-by-removing-conflicting-admin-auth-gating-redirect-logic-and-ensuring-admin-navigation-switching-sections-inside-the-dashboard-does-not-trigger-redirects-or-full-remount-loops",
+      "title": "Stop the admin UI from flickering after a click by removing conflicting admin-auth gating/redirect logic and ensuring admin navigation (switching sections inside the dashboard) does not trigger redirects or full remount loops.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-visible-functional-close-x-button-to-the-sidebar-drawer-ui-so-users-can-close-it-reliably-clicking-the-x-must-close-the-sidebar-and-trigger-a-slide-out-close-animation-in-the-same-direction-the-sidebar-opens-e-g-left-sidebar-slides-out-left-right-sidebar-slides-out-right",
-      "title": "Add a visible, functional close (X) button to the sidebar drawer UI so users can close it reliably; clicking the X must close the sidebar and trigger a slide-out close animation in the same direction the sidebar opens (e.g., left sidebar slides out left; right sidebar slides out right).",
+      "id": "feature-add-a-small-developer-facing-diagnostic-safeguard-to-prevent-repeated-navigations-in-admin-routing-e-g-avoid-calling-navigate-to-the-same-path-repeatedly-and-ensure-admin-routing-guards-do-not-create-rapid-state-oscillation-between-authenticated-unauthenticated-during-normal-interaction",
+      "title": "Add a small, developer-facing diagnostic safeguard to prevent repeated navigations in admin routing (e.g., avoid calling navigate to the same path repeatedly) and ensure admin routing guards do not create rapid state oscillation between authenticated/unauthenticated during normal interaction.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Add global animated neon/glow background effect across the entire website",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Implement working sidebar close (X) button that triggers a slide-out close animation",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
-  "projectName": "Global neon/glow animated background + working sidebar close (X) with slide-out animation",
+  "new_feature_requests": [],
+  "projectName": "Fix admin dashboard flickering after clicking (layout regression)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

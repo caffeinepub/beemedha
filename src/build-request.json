@@ -1,63 +1,75 @@
 {
   "kind": "build_request",
-  "title": "Global neon/glow animated background + working sidebar close (X) with slide-out animation",
-  "priority": "normal",
+  "title": "Fix admin dashboard flickering after clicking (layout regression)",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Apply a global animated neon/glow background effect across the entire website (all routes), not just within specific panels, while keeping all UI content interactive (no blocking pointer events) and ensuring legible contrast for text/icons.",
+      "text": "Stop the admin UI from flickering after a click by removing conflicting admin-auth gating/redirect logic and ensuring admin navigation (switching sections inside the dashboard) does not trigger redirects or full remount loops.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "add neon/glow animated to hole website",
-          "1. global glowing background effect",
-          "build"
+          "admin page is flickering so i can't access it",
+          "only after a click",
+          "changed",
+          "Layout",
+          "fix it",
+          "build it"
         ]
       },
       "acceptanceCriteria": [
-        "All pages (e.g., /, /products, /news, /terms, /admin) display an animated neon/glow background behind the main content.",
-        "The animated background layers do not intercept clicks/scroll/inputs (e.g., links/buttons remain clickable; scrolling works normally).",
-        "Background animation respects `prefers-reduced-motion` by disabling or significantly reducing motion while retaining the neon color scheme (no rapid movement when reduced motion is enabled)."
+        "When visiting /admin as an authenticated admin, clicking any sidebar item (Dashboard, Store Settings, Products, Orders, Customers) does not cause visible page flicker or repeated full-screen loading states.",
+        "When visiting /admin while not authenticated, the app redirects to /admin/login once (no redirect loop) and remains stable.",
+        "After successful admin login, navigation to /admin is stable and does not flicker when interacting with the dashboard layout (sidebar clicks, mobile menu open/close).",
+        "Admin session validation/loading UI appears only when genuinely validating (e.g., initial page load) and does not re-trigger on simple UI clicks that only change local layout state."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a visible, functional close (X) button to the sidebar drawer UI so users can close it reliably; clicking the X must close the sidebar and trigger a slide-out close animation in the same direction the sidebar opens (e.g., left sidebar slides out left; right sidebar slides out right).",
+      "text": "Add a small, developer-facing diagnostic safeguard to prevent repeated navigations in admin routing (e.g., avoid calling navigate to the same path repeatedly) and ensure admin routing guards do not create rapid state oscillation between authenticated/unauthenticated during normal interaction.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "and working close x button",
-          "2. sidebar",
-          "3. also trigger any animation when closing",
-          "slide out to the left/right."
+          "admin page is flickering so i can't access it",
+          "only after a click",
+          "changed",
+          "Layout"
         ]
       },
       "acceptanceCriteria": [
-        "When the sidebar drawer is open, an X close button is visible within the sidebar UI and is keyboard accessible.",
-        "Clicking/tapping the X closes the sidebar and a slide-out animation plays (no instant disappearance).",
-        "The sidebar slides out in the same direction as its opening side (left drawers slide out left; right drawers slide out right).",
-        "No console errors occur when opening/closing the sidebar repeatedly."
+        "AdminRouteGuard does not invoke navigation repeatedly when already on the target route.",
+        "In React DevTools/console, interacting with the admin sidebar does not cause rapid alternating renders between the dashboard and blank/null states.",
+        "If the user is unauthenticated, admin pages render either a stable redirect to /admin/login or a stable login UI, without intermittent dashboard flashes."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under `frontend/src/components/ui` (read-only shadcn components); compose/wrap them instead.",
-    "Do not modify immutable paths listed in SYSTEM_CONTEXT (e.g., `frontend/src/main.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/hooks/useInternetIdentity.ts(x)`).",
-    "Frontend-only change; do not introduce new backend canisters or external services."
+    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or anything in frontend/src/components/ui (compose these components instead).",
+    "Keep the backend as a single Motoko actor; no new backend services."
   ],
   "nonGoals": [
-    "Adding new pages or store features unrelated to the neon background and sidebar close behavior.",
-    "Changing authentication flows (Internet Identity / customer/admin sessions).",
-    "Backend schema/state migrations (not required for this UI-only change)."
+    "Implementing a new admin authentication backend (secure username/password hashing, sessions, etc.).",
+    "Redesigning the admin dashboard UI beyond what is required to eliminate the flicker regression.",
+    "Changing public-site pages, routing, or theme unrelated to the admin flicker."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

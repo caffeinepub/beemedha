@@ -157,11 +157,6 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'adminLogin' : ActorMethod<
-    [string, string],
-    { 'error' : string } |
-      { 'success' : string }
-  >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createOrder' : ActorMethod<
     [string, Array<OrderItem>, number, DeliveryAddress],
@@ -200,10 +195,7 @@ export interface _SERVICE {
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
   'getStoreSettings' : ActorMethod<[], StoreSettings>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'isAdminSessionValid' : ActorMethod<[string], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'isCustomerSessionValid' : ActorMethod<[string], boolean>,
-  'loginCustomerByEmail' : ActorMethod<[string], string>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveCustomerAddress' : ActorMethod<[string, DeliveryAddress], undefined>,
   'setLogo' : ActorMethod<[Logo], undefined>,

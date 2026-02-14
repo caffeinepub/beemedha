@@ -1,36 +1,30 @@
 import { RouterProvider, createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from 'next-themes';
+import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import NewsPage from './pages/NewsPage';
 import NewsDetailPage from './pages/NewsDetailPage';
 import TermsPage from './pages/TermsPage';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-import SiteLayout from './components/layout/SiteLayout';
-import Footer from './components/layout/Footer';
-import GlobalNeonBackground from './components/brand/GlobalNeonBackground';
-import { Toaster } from '@/components/ui/sonner';
+import AdminRouteGuard from './components/admin/AdminRouteGuard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
+      staleTime: 1000 * 60,
       refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 });
 
 const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <GlobalNeonBackground />
-      <div className="min-h-screen flex flex-col relative z-10">
-        <SiteLayout />
-        <Footer />
-      </div>
-    </>
-  ),
+  component: SiteLayout,
 });
 
 const indexRoute = createRoute({
@@ -69,10 +63,20 @@ const termsRoute = createRoute({
   component: TermsPage,
 });
 
-const adminRoute = createRoute({
+const adminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/login',
+  component: AdminLoginPage,
+});
+
+const adminDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
-  component: AdminDashboardPage,
+  component: () => (
+    <AdminRouteGuard>
+      <AdminDashboardPage />
+    </AdminRouteGuard>
+  ),
 });
 
 const routeTree = rootRoute.addChildren([
@@ -82,7 +86,8 @@ const routeTree = rootRoute.addChildren([
   newsRoute,
   newsDetailRoute,
   termsRoute,
-  adminRoute,
+  adminLoginRoute,
+  adminDashboardRoute,
 ]);
 
 const router = createRouter({ routeTree, defaultPreload: 'intent' });
@@ -95,9 +100,11 @@ declare module '@tanstack/react-router' {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <Toaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

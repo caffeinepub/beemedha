@@ -1,20 +1,19 @@
-import Runtime "mo:core/Runtime";
-import Nat "mo:core/Nat";
-import Iter "mo:core/Iter";
-
 import Map "mo:core/Map";
-import Blob "mo:core/Blob";
-import Array "mo:core/Array";
-import Int "mo:core/Int";
+import Text "mo:core/Text";
+import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
-import Order "mo:core/Order";
-import AccessControl "authorization/access-control";
+import Iter "mo:core/Iter";
+import Array "mo:core/Array";
+import Blob "mo:core/Blob";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Storage "blob-storage/Storage";
+import AccessControl "authorization/access-control";
 import MixinStorage "blob-storage/Mixin";
+import Storage "blob-storage/Storage";
+import Nat "mo:core/Nat";
+import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 
-// specify the data migration function in with-clause
+
 
 actor {
   // Product types
@@ -68,7 +67,6 @@ actor {
     isDeleted : Bool;
   };
 
-  // Product updates
   type ProductUpdate = {
     id : Nat;
     productUpdateType : ProductUpdateType;
@@ -105,25 +103,11 @@ actor {
     name : Text;
   };
 
-  // Logo
   type Logo = {
     mimeType : Text;
     data : [Nat8];
   };
 
-  // Admin management types
-  type AdminCredentials = {
-    username : Text;
-    email : Text;
-    passwordHash : Text;
-  };
-
-  type AdminSession = {
-    sessionId : Text;
-    expiresAt : Time.Time;
-  };
-
-  // Customer types
   public type CustomerIdentifier = {
     #email : Text;
     #phone : Text;
@@ -178,12 +162,6 @@ actor {
   var nextContactId = 0;
   var nextOrderId = 0;
   var logo : ?Logo = null;
-  var adminCredentials : ?AdminCredentials = null;
-  let adminSessions = Map.empty<Text, AdminSession>();
-  let customerSessions = Map.empty<Text, CustomerSession>();
-
-  let ADMIN_SESSION_TIMEOUT : Int = 24 * 60 * 60 * 1_000_000_000;
-  let CUSTOMER_SESSION_TIMEOUT : Int = 7 * 24 * 60 * 60 * 1_000_000_000;
 
   let products = Map.empty<Nat, Product>();
   let productVariants = Map.empty<Nat, ProductVariants>();
@@ -205,31 +183,6 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
   include MixinStorage();
-
-  // Product helpers
-  module Product {
-    public func compareByCreated(a : Product, b : Product) : Order.Order {
-      Int.compare(b.timestamp, a.timestamp);
-    };
-  };
-
-  module TextComparator {
-    public func compare(a : Blob, b : Blob) : Order.Order {
-      Blob.compare(a, b);
-    };
-  };
-
-  // Admin helpers (from previous implementation)
-  func initializeAdminCredentials() : () {
-    if (adminCredentials.isNull()) {
-      let passwordHash = "789852qwertyuiop";
-      adminCredentials := ?{
-        username = "Thejas Kinnigoli";
-        email = "thejasumeshpoojary7@gmail.com";
-        passwordHash;
-      };
-    };
-  };
 
   // Product CRUD
   public type CreateProductPayload = {
@@ -360,87 +313,9 @@ actor {
     );
   };
 
-  // Session management
   func createProductKey() : Nat {
     productKeyIncrement += 1;
     productKeyIncrement.toNat();
-  };
-
-  // Administrative authentication methods
-  public shared ({ caller }) func adminLogin(email : Text, password : Text) : async {
-    #success : Text;
-    #error : Text;
-  } {
-    initializeAdminCredentials();
-    switch (adminCredentials) {
-      case (null) { #error("No admin credentials present") };
-      case (?creds) {
-        if (creds.email == email and creds.passwordHash == password) {
-          let sessionId = createSessionId();
-          let expiresAt = Time.now() + ADMIN_SESSION_TIMEOUT;
-          let session : AdminSession = {
-            sessionId;
-            expiresAt;
-          };
-          adminSessions.add(sessionId, session);
-          #success(sessionId);
-        } else {
-          #error("Invalid credentials");
-        };
-      };
-    };
-  };
-
-  public query func isAdminSessionValid(sessionId : Text) : async Bool {
-    switch (adminSessions.get(sessionId)) {
-      case (null) { false };
-      case (?session) {
-        Time.now() < session.expiresAt;
-      };
-    };
-  };
-
-  public func loginCustomerByEmail(email : Text) : async Text {
-    let sessionId = createSessionId();
-    let identifier : CustomerIdentifier = #email(email);
-    let expiresAt = Time.now() + CUSTOMER_SESSION_TIMEOUT;
-    let session : CustomerSession = {
-      sessionId;
-      identifier;
-      expiresAt;
-    };
-    customerSessions.add(sessionId, session);
-    sessionId;
-  };
-
-  public query func isCustomerSessionValid(sessionId : Text) : async Bool {
-    switch (customerSessions.get(sessionId)) {
-      case (null) { false };
-      case (?session) {
-        Time.now() < session.expiresAt;
-      };
-    };
-  };
-
-  // Product helpers
-  func getCustomerIdentifierFromSession(sessionId : Text) : ?CustomerIdentifier {
-    switch (customerSessions.get(sessionId)) {
-      case (null) { null };
-      case (?session) {
-        if (Time.now() < session.expiresAt) {
-          ?session.identifier;
-        } else {
-          null;
-        };
-      };
-    };
-  };
-
-  func getEmailFromIdentifier(identifier : CustomerIdentifier) : Text {
-    switch (identifier) {
-      case (#email(email)) { email };
-      case (#phone(phone)) { phone };
-    };
   };
 
   // User management
@@ -463,6 +338,30 @@ actor {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
+  };
+
+  // Store settings
+  public query func getStoreSettings() : async StoreSettings {
+    siteSettings;
+  };
+
+  public shared ({ caller }) func updateStoreSettings(settings : StoreSettings) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update store settings");
+    };
+    siteSettings := settings;
+  };
+
+  func getEmailFromIdentifier(identifier : CustomerIdentifier) : Text {
+    switch (identifier) {
+      case (#email(email)) { email };
+      case (#phone(phone)) { phone };
+    };
+  };
+
+  // Product helpers
+  func getCustomerIdentifierFromSession(sessionId : Text) : ?CustomerIdentifier {
+    null;
   };
 
   // Orders
@@ -639,18 +538,6 @@ actor {
     updateId;
   };
 
-  // Store settings
-  public query func getStoreSettings() : async StoreSettings {
-    siteSettings;
-  };
-
-  public shared ({ caller }) func updateStoreSettings(settings : StoreSettings) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can update store settings");
-    };
-    siteSettings := settings;
-  };
-
   // Logo management
   public query func getLogo() : async ?Logo {
     logo;
@@ -682,10 +569,5 @@ actor {
       Runtime.trap("Unauthorized: Only admins can view contact submissions");
     };
     contacts.values().toArray();
-  };
-
-  // Session id
-  func createSessionId() : Text {
-    Int.abs(Time.now()).toNat().toText();
   };
 };

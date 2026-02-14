@@ -1,82 +1,27 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T13:42:56.699Z",
-  "summary": "REQ-1 is partially addressed by adding a GlobalNeonBackground component and mounting it at the root so it appears behind all routes, with a prefers-reduced-motion media query hook. However, the diff summary does not provide evidence of the required CSS behaviors (non-intercepting pointer events, actual animation, reduced-motion behavior implementation, and contrast/legibility safeguards). REQ-2 is partially addressed by adding a reusable DrawerCloseButton and wiring it into multiple Sheet-based drawers, but the diff summary does not show evidence of slide-out close animation behavior or direction-specific slide-out matching the opening side.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "Ensure the global animated neon/glow background layers do not intercept clicks/scroll/inputs (pointer events must not be blocked).",
-      "reason": "GlobalNeonBackground is added and mounted, but the diff summary does not show any CSS (e.g., pointer-events: none on background layers) or other implementation guaranteeing background layers won't capture interactions.",
-      "evidence": [
-        "frontend/src/components/brand/GlobalNeonBackground.tsx",
-        "frontend/src/App.tsx",
-        "frontend/index.css (truncated; no shown rules for .global-neon-*)"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "Provide an animated neon/glow background effect site-wide with reduced motion support that disables or significantly reduces motion while retaining neon colors when prefers-reduced-motion is enabled.",
-      "reason": "The component toggles a 'reduced-motion' class based on prefers-reduced-motion, but the diff summary does not include the CSS/animation rules that actually animate the background or reduce/disable motion when 'reduced-motion' is present.",
-      "evidence": [
-        "frontend/src/components/brand/GlobalNeonBackground.tsx",
-        "frontend/index.css (truncated; animation/keyframes for global-neon not shown)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Clicking the sidebar close (X) must close the sidebar and trigger a slide-out close animation (not an instant disappearance).",
-      "reason": "DrawerCloseButton closes by setting Sheet open state false, but the diff summary does not show any animation configuration (e.g., SheetContent animation classes) that ensures a visible slide-out animation on close rather than an instant unmount.",
-      "evidence": [
-        "frontend/src/components/common/DrawerCloseButton.tsx",
-        "frontend/src/components/cart/CartSheet.tsx",
-        "frontend/src/components/layout/Header.tsx",
-        "frontend/src/components/admin/dashboard/AdminShell.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Sidebar slide-out direction must match the opening side (left drawers slide out left; right drawers slide out right).",
-      "reason": "Header shows a right-side SheetContent, but the admin SheetContent side is truncated and there is no evidence of direction-aware close animations; direction correctness for both left and right drawers cannot be verified from the provided diff summary.",
-      "evidence": [
-        "frontend/src/components/layout/Header.tsx",
-        "frontend/src/components/admin/dashboard/AdminShell.tsx (truncated)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-14T14:36:13.704Z",
+  "summary": "Diff implements changes aimed at stopping admin flicker by removing conflicting inline gating (AdminAccessGate now pass-through), stabilizing session validation so it runs once, and adding a safeNavigate helper to prevent repeated same-path navigations. However, the diff also introduces a client-side simulated admin login with hardcoded credentials, which was not requested and conflicts with the stated non-goal of implementing new admin authentication behavior.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Broad UI theming and global CSS changes unrelated to the neon background requirement (e.g., extensive CSS variables for warm theme colors, Radix stacking/z-index rules, dialog/select/popper z-index adjustments).",
-      "reason": "BuildRequest focuses on a global neon/glow animated background and sidebar close behavior; it does not request general theme palette overhauls or Radix stacking fixes.",
+      "description": "Client-side simulated admin authentication with hardcoded username/password, localStorage session issuance/expiry, and comments indicating backend login is not implemented.",
+      "reason": "BuildRequest focuses on removing conflicting gating/redirect logic to fix flicker and adding a diagnostic safeguard against repeated navigations, and explicitly lists implementing new admin authentication backend as a non-goal. Introducing new auth behavior (hardcoded credentials + session generation) is not requested as part of the flicker fix requirements.",
       "evidence": [
-        "frontend/index.css"
-      ]
-    },
-    {
-      "description": "Product/admin feature changes (e.g., AdminProductsPage/AdminNewsPage mutation authentication changes, new/updated INR price utilities and product price display components, products page category tab updates, asset URL normalization utility).",
-      "reason": "Non-goals explicitly exclude adding unrelated store features; these changes are not part of the neon background or sidebar close behavior requirements.",
-      "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Documentation update about custom domain setup and rebuild/redeploy guide reference.",
-      "reason": "Not requested by the BuildRequest, which is explicitly a frontend UI change for neon background and sidebar close behavior.",
-      "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend/src/hooks/useAdminSession.ts"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.74,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/index.css",
-    "frontend/src/App.tsx",
-    "frontend/src/components/admin/dashboard/AdminShell.tsx",
-    "frontend/src/components/brand/GlobalNeonBackground.tsx",
-    "frontend/src/components/cart/CartSheet.tsx",
-    "frontend/src/components/common/DrawerCloseButton.tsx",
-    "frontend/src/components/layout/Header.tsx",
+    "frontend/src/components/admin/AdminAccessGate.tsx",
+    "frontend/src/components/admin/AdminRouteGuard.tsx",
+    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/pages/admin/AdminDashboardPage.tsx",
+    "frontend/src/pages/admin/AdminLoginPage.tsx",
+    "frontend/src/utils/safeNavigate.ts",
     "project_state.json"
   ]
 }

@@ -9,7 +9,7 @@ export function Section({
   ...props
 }: React.HTMLAttributes<HTMLElement>) {
   return (
-    <section className={cn('py-16 md:py-24', className)} {...props}>
+    <section className={cn('py-20 md:py-28', className)} {...props}>
       {children}
     </section>
   );
@@ -21,7 +21,7 @@ export function Container({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('container mx-auto px-4', className)} {...props}>
+    <div className={cn('container mx-auto px-6 md:px-8', className)} {...props}>
       {children}
     </div>
   );
@@ -35,7 +35,7 @@ export function BrandCard({
   return (
     <Card
       className={cn(
-        'border-border/50 shadow-soft hover:shadow-premium transition-all duration-300',
+        'border-border/50 bg-card shadow-soft hover:shadow-soft-lg transition-all duration-300 rounded-xl',
         className
       )}
       {...props}
@@ -54,7 +54,7 @@ export function BrandBadge({
   return (
     <Badge
       variant={variant}
-      className={cn('font-medium', className)}
+      className={cn('font-medium rounded-full px-3 py-1', className)}
       {...props}
     >
       {children}
@@ -71,7 +71,7 @@ export function BrandButton({
   return (
     <Button
       variant={variant}
-      className={cn('font-medium', className)}
+      className={cn('font-semibold rounded-lg', className)}
       {...props}
     >
       {children}

@@ -1,63 +1,68 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Global neon animated background + reliable sidebar drawer close with slide-out animation",
+  "title": "Fix admin dashboard flicker by stabilizing admin auth guards and navigation",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Render an animated neon/glow background behind all routes without blocking interactions and with reduced-motion support.",
+      "summary": "Eliminate conflicting admin auth gating and stabilize admin dashboard layout interactions so local UI state changes (sidebar clicks/mobile menu) don’t trigger redirects or remount/loading loops.",
       "acceptanceCriteria": [
-        "All pages (e.g., /, /products, /news, /terms, /admin) display an animated neon/glow background behind the main content.",
-        "The animated background layers do not intercept clicks/scroll/inputs (e.g., links/buttons remain clickable; scrolling works normally).",
-        "Background animation respects `prefers-reduced-motion` by disabling or significantly reducing motion while retaining the neon color scheme (no rapid movement when reduced motion is enabled)."
+        "When visiting /admin as an authenticated admin, clicking any sidebar item (Dashboard, Store Settings, Products, Orders, Customers) does not cause visible page flicker or repeated full-screen loading states.",
+        "When visiting /admin while not authenticated, the app redirects to /admin/login once (no redirect loop) and remains stable.",
+        "After successful admin login, navigation to /admin is stable and does not flicker when interacting with the dashboard layout (sidebar clicks, mobile menu open/close).",
+        "Admin session validation/loading UI appears only when genuinely validating (e.g., initial page load) and does not re-trigger on simple UI clicks that only change local layout state."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/brand/GlobalNeonBackground.tsx",
-          "operation": "create",
-          "description": "Create a global, fixed-position neon/glow animated background component (multi-layer gradient/particles/shapes) that sits behind app content with pointer-events disabled and appropriate z-indexing. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/pages/admin/AdminDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Remove the nested AdminAccessGate from the admin dashboard page so /admin is guarded in exactly one place (AdminRouteGuard). Keep section switching purely local (no auth checks/redirects triggered by section state)."
         },
         {
-          "path": "frontend/index.css",
+          "path": "frontend/src/hooks/useAdminSession.ts",
           "operation": "modify",
-          "description": "Add/adjust global CSS utilities to support a full-viewport background layer (e.g., fixed inset container, safe z-index stacking), ensure background layers never capture pointer events, and reuse existing neon animations; confirm `prefers-reduced-motion` also applies to the global background layers."
+          "description": "Stop session validation state from oscillating during normal UI interactions by making validation a one-time (or sessionId-change) check sourced from localStorage/expiry, instead of coupling isValidating to actor/isFetching changes. Ensure isValidating only reflects genuine session initialization/rehydration."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/admin/AdminRouteGuard.tsx",
           "operation": "modify",
-          "description": "Wrap the root route layout to include the new GlobalNeonBackground behind all route content (including admin) while keeping the main UI content in a higher stacking context for legible contrast and full interactivity. Verify the component's usage instructions before implementing."
+          "description": "Adjust guard rendering to avoid null flashes and unnecessary full-screen loaders: show the validating UI only during initial validation, and otherwise render children for authenticated users. Use the new safe-navigation utility to perform a single stable redirect to /admin/login for unauthenticated users."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminLoginPage.tsx",
+          "operation": "modify",
+          "description": "Harden login page redirect behavior to avoid redundant navigations: after successful login, navigate to /admin only once and avoid re-navigating if already there (via safe-navigation helper)."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminAccessGate.tsx",
+          "operation": "modify",
+          "description": "Deprecate this component to prevent future reintroduction of conflicting gating: add a clear comment indicating it should not be used alongside AdminRouteGuard, and (optionally) simplify it to a thin wrapper or leave it unused without affecting runtime behavior."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add an accessible close (X) control to sidebar drawers so close triggers the existing slide-out animation matching the drawer side.",
+      "summary": "Add a developer-facing safeguard in admin routing to prevent repeated navigations to the same path and reduce auth-state oscillation that can cause flicker.",
       "acceptanceCriteria": [
-        "When the sidebar drawer is open, an X close button is visible within the sidebar UI and is keyboard accessible.",
-        "Clicking/tapping the X closes the sidebar and a slide-out animation plays (no instant disappearance).",
-        "The sidebar slides out in the same direction as its opening side (left drawers slide out left; right drawers slide out right).",
-        "No console errors occur when opening/closing the sidebar repeatedly."
+        "AdminRouteGuard does not invoke navigation repeatedly when already on the target route.",
+        "In React DevTools/console, interacting with the admin sidebar does not cause rapid alternating renders between the dashboard and blank/null states.",
+        "If the user is unauthenticated, admin pages render either a stable redirect to /admin/login or a stable login UI, without intermittent dashboard flashes."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/common/DrawerCloseButton.tsx",
+          "path": "frontend/src/utils/safeNavigate.ts",
           "operation": "create",
-          "description": "Create a reusable, keyboard-accessible close (X) button component (aria-label, focus styles) designed to be placed inside drawer content and invoke an onClose callback without bypassing the drawer’s normal close animation. Verify the component's usage instructions before implementing."
+          "description": "Create a small helper for TanStack Router navigation that no-ops when the app is already at the target path and logs a developer-facing warning if repeated same-path navigations are attempted in rapid succession (diagnostic safeguard)."
         },
         {
-          "path": "frontend/src/components/layout/Header.tsx",
+          "path": "frontend/src/components/admin/AdminRouteGuard.tsx",
           "operation": "modify",
-          "description": "In the mobile navigation Sheet (side=\"right\"), render the DrawerCloseButton within the SheetContent/NeonSurface content and wire it to setMobileMenuOpen(false) so the drawer closes via normal state change and plays the right-side slide-out animation. Verify the component's usage instructions before implementing."
+          "description": "Use safeNavigate helper to avoid calling navigate to the same route repeatedly and to guard against rapid state oscillation; ensure redirects use a stable single-shot behavior (e.g., replace) when redirecting to /admin/login."
         },
         {
-          "path": "frontend/src/components/admin/dashboard/AdminShell.tsx",
+          "path": "frontend/src/pages/admin/AdminLoginPage.tsx",
           "operation": "modify",
-          "description": "In the admin mobile Sheet (side=\"left\"), render the DrawerCloseButton within the SheetContent/NeonSurface content and wire it to setMobileMenuOpen(false) so the drawer closes with the left-side slide-out animation and remains stable across repeated toggles. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/cart/CartSheet.tsx",
-          "operation": "modify",
-          "description": "Add the DrawerCloseButton to the cart drawer (SheetContent) and wire it to setOpen(false) so users can reliably close the drawer with a visible X while preserving the existing slide-out close animation. Verify the component's usage instructions before implementing."
+          "description": "Use safeNavigate helper for the authenticated redirect (/admin) and for post-login navigation, preventing repeated navigations when already on /admin."
         }
       ]
     }

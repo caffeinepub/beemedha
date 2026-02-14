@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Add a global animated neon/glow background across the entire site and make the sidebar drawer reliably closable via a visible X button with a proper slide-out close animation.
+**Goal:** Eliminate the admin dashboard flicker/regression after clicks by fixing conflicting admin auth gating/redirect logic and stabilizing admin routing.
 
 **Planned changes:**
-- Apply a site-wide neon/glow animated background layer behind all routes, ensuring it does not block clicks/scrolling and maintains readable contrast for UI text/icons.
-- Respect `prefers-reduced-motion` by disabling or significantly reducing background motion while keeping the neon color styling.
-- Add a visible, keyboard-accessible close (X) button inside the sidebar drawer that closes the drawer and plays a slide-out animation in the correct direction (matching the opening side).
-- Ensure opening/closing the sidebar repeatedly works without console errors.
+- Remove/adjust conflicting admin authentication gating and redirect behavior that causes redirects or full remount loops during in-dashboard navigation.
+- Ensure switching admin dashboard sections (sidebar navigation) updates content without triggering redirects, repeated session validation, or full-screen loading states.
+- Add a small developer-facing safeguard in admin routing/guards to avoid repeated navigation calls to the same path and prevent rapid auth-state oscillation during normal interaction.
 
-**User-visible outcome:** Every page shows an animated neon/glow background behind the content, and users can close the sidebar using a clear X button that triggers a smooth slide-out animation.
+**User-visible outcome:** Authenticated admins can use `/admin` and click through dashboard sections without visible flicker or repeated loading; unauthenticated users are redirected once to `/admin/login` without loops, and the admin UI remains stable after login.

@@ -155,13 +155,6 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    adminLogin(email: string, password: string): Promise<{
-        __kind__: "error";
-        error: string;
-    } | {
-        __kind__: "success";
-        success: string;
-    }>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createOrder(sessionId: string, items: Array<OrderItem>, totalPrice: number, address: DeliveryAddress): Promise<{
         __kind__: "success";
@@ -198,10 +191,7 @@ export interface backendInterface {
     getProductsByCategory(category: Category): Promise<Array<Product>>;
     getStoreSettings(): Promise<StoreSettings>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
-    isAdminSessionValid(sessionId: string): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
-    isCustomerSessionValid(sessionId: string): Promise<boolean>;
-    loginCustomerByEmail(email: string): Promise<string>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveCustomerAddress(sessionId: string, address: DeliveryAddress): Promise<void>;
     setLogo(newLogo: Logo): Promise<void>;

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import AdminAccessGate from '../../components/admin/AdminAccessGate';
 import AdminShell from '../../components/admin/dashboard/AdminShell';
 import DashboardSection from '../../components/admin/dashboard/sections/DashboardSection';
 import StoreSettingsSection from '../../components/admin/dashboard/sections/StoreSettingsSection';
@@ -32,10 +31,8 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <AdminAccessGate>
-      <AdminShell activeSection={activeSection} onSectionChange={setActiveSection}>
-        {renderSection()}
-      </AdminShell>
-    </AdminAccessGate>
+    <AdminShell activeSection={activeSection} onSectionChange={setActiveSection}>
+      {renderSection()}
+    </AdminShell>
   );
 }
