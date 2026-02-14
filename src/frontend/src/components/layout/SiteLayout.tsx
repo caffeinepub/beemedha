@@ -1,20 +1,43 @@
-import { Outlet } from '@tanstack/react-router';
+import { ReactNode } from 'react';
+import { useGetSiteSettings } from '../../hooks/useQueries';
+import { useIsAdminRoute } from '../../hooks/useIsAdminRoute';
 import Header from './Header';
 import Footer from './Footer';
-import { Toaster } from '@/components/ui/sonner';
 
-export default function SiteLayout() {
-  return (
-    <div className="min-h-screen flex flex-col relative">
-      <div className="fixed inset-0 honeycomb-pattern pointer-events-none z-0" />
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <Header />
+interface SiteLayoutProps {
+  children: ReactNode;
+}
+
+export default function SiteLayout({ children }: SiteLayoutProps) {
+  const { data: settings } = useGetSiteSettings();
+  const isAdminRoute = useIsAdminRoute();
+
+  const backgroundStyle = settings?.backgroundImage 
+    ? { backgroundImage: `url(${settings.backgroundImage})` }
+    : {};
+
+  // Admin routes get a minimal layout without public header/footer
+  if (isAdminRoute) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
         <main className="flex-1">
-          <Outlet />
+          {children}
         </main>
-        <Footer />
       </div>
-      <Toaster />
+    );
+  }
+
+  // Public routes get the full site layout
+  return (
+    <div 
+      className="min-h-screen flex flex-col bg-honeycomb bg-cover bg-fixed bg-center"
+      style={backgroundStyle}
+    >
+      <Header />
+      <main className="flex-1">
+        {children}
+      </main>
+      <Footer />
     </div>
   );
 }

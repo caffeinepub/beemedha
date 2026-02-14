@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAdminSession } from '../../hooks/useAdminSession';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,18 @@ import { toast } from 'sonner';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
-  const { login } = useAdminSession();
+  const { login, isValid, isValidating } = useAdminSession();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isValidating && isValid) {
+      navigate({ to: '/admin/products', replace: true });
+    }
+  }, [isValid, isValidating, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +40,7 @@ export default function AdminLoginPage() {
       
       if (success) {
         toast.success('Login successful');
-        navigate({ to: '/admin/products' });
+        navigate({ to: '/admin/products', replace: true });
       } else {
         setError('Invalid credentials. Please check your username and password.');
       }
@@ -44,6 +51,15 @@ export default function AdminLoginPage() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking existing session
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">

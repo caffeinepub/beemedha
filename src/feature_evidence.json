@@ -2,18 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-current-internet-identity-based-protection-for-the-admin-route-so-that-https-beemedha-3zg-caffeine-xyz-admin-becomes-a-dedicated-password-based-admin-login-page-not-internet-identity-after-successful-login-allow-access-to-the-existing-admin-pages-dashboard-products-news-logo-access-without-prompting-for-internet-identity",
-      "featureTitle": "Replace the current Internet Identity-based protection for the /admin route so that https://beemedha-3zg.caffeine.xyz/#/admin becomes a dedicated password-based admin login page (not Internet Identity). After successful login, allow access to the existing admin pages (dashboard, products, news, logo, access) without prompting for Internet Identity.",
+      "featureId": "feature-remove-internet-identity-passkey-authentication-requirements-and-ui-from-the-admin-area-so-admin-access-is-granted-only-via-the-username-password-admin-session-flow",
+      "featureTitle": "Remove Internet Identity (passkey) authentication requirements and UI from the admin area so admin access is granted only via the username/password admin session flow.",
       "files": [
-        "frontend/src/components/admin/AdminRouteGuard.tsx",
-        "frontend/src/components/layout/Header.tsx",
-        "frontend/src/hooks/useAdminSession.ts",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminAccessPage.tsx",
-        "frontend/src/pages/admin/AdminLoginPage.tsx",
-        "frontend/src/pages/admin/AdminLogoPage.tsx",
-        "frontend/src/pages/admin/AdminNewsPage.tsx",
-        "frontend/src/pages/admin/AdminProductsPage.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
+        "frontend/src/pages/admin/AdminAccessPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -21,50 +15,11 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
       ],
       "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-customer-authentication-flow-that-allows-customers-to-log-in-using-either-email-or-phone-number-and-verify-with-an-otp-challenge-provide-ui-screens-for-entering-email-phone-entering-otp-and-showing-logged-in-customer-state",
-      "featureTitle": "Add a customer authentication flow that allows customers to log in using either email or phone number and verify with an OTP challenge. Provide UI screens for: entering email/phone, entering OTP, and showing logged-in customer state.",
-      "files": [
-        "frontend/src/components/auth/CustomerLoginDialog.tsx",
-        "frontend/src/components/layout/Header.tsx",
-        "frontend/src/hooks/useCustomerSession.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-the-route-configuration-and-guards-in-frontend-src-app-tsx-are-updated-so-that-admin-and-admin-use-the-new-password-admin-guard-while-the-rest-of-the-site-continues-to-function-normally-under-hash-routing",
-      "featureTitle": "Ensure the route configuration and guards in frontend/src/App.tsx are updated so that /admin and /admin/* use the new password-admin guard, while the rest of the site continues to function normally under hash routing.",
-      "files": [
-        "frontend/src/App.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
+        "REQ-2"
       ],
       "confidence": "high"
     }

@@ -8,8 +8,10 @@ import Order "mo:core/Order";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
+import Storage "blob-storage/Storage";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import MixinStorage "blob-storage/Mixin";
 import Char "mo:core/Char";
 import Nat32 "mo:core/Nat32";
 import Nat8 "mo:core/Nat8";
@@ -18,14 +20,13 @@ import Random "mo:core/Random";
 import Option "mo:core/Option";
 
 actor {
-  // Data types
   type Category = {
     #beeProducts;
     #naturalHoney;
     #rawHoney;
   };
 
-  public type AvailabilityStatus = {
+  type AvailabilityStatus = {
     #inStock;
     #limited;
     #outOfStock;
@@ -100,7 +101,6 @@ actor {
 
   public type UserProfile = {
     name : Text;
-    // Add other user-specific fields as needed
   };
 
   public type Logo = {
@@ -108,7 +108,6 @@ actor {
     data : [Nat8];
   };
 
-  // Admin authentication types
   public type AdminCredentials = {
     username : Text;
     email : Text;
@@ -120,17 +119,9 @@ actor {
     expiresAt : Time.Time;
   };
 
-  // Customer authentication types
   public type CustomerIdentifier = {
     #email : Text;
     #phone : Text;
-  };
-
-  public type OTPChallenge = {
-    identifier : CustomerIdentifier;
-    otpHash : Text;
-    expiresAt : Time.Time;
-    attempts : Nat;
   };
 
   public type CustomerSession = {
@@ -139,37 +130,86 @@ actor {
     expiresAt : Time.Time;
   };
 
+  public type DeliveryAddress = {
+    name : Text;
+    addressLine1 : Text;
+    addressLine2 : Text;
+    city : Text;
+    state : Text;
+    postalCode : Text;
+    country : Text;
+    phoneNumber : Text;
+  };
+
+  public type OrderStatus = {
+    #pending;
+    #inProgress;
+    #transit;
+    #delivered;
+  };
+
+  public type OrderType = {
+    id : Nat;
+    customerIdentifier : CustomerIdentifier;
+    items : [OrderItem];
+    totalPrice : Float;
+    status : OrderStatus;
+    address : DeliveryAddress;
+    createdAt : Time.Time;
+    updatedAt : Time.Time;
+  };
+
+  public type OrderItem = {
+    productId : Nat;
+    quantity : Nat;
+    weightVariant : ?WeightVariant;
+    flavorVariant : ?FlavorVariant;
+  };
+
+  public type SiteSettings = {
+    backgroundImage : ?Text;
+    mapUrl : Text;
+    contactDetails : Text;
+    certificationsContent : Text;
+    certificationsImage : ?Text;
+    aboutContent : Text;
+  };
+
   var nextUpdateId = 0;
   var nextContactId = 0;
+  var nextOrderId = 0;
   var products = Map.empty<Nat, Product>();
   let updates = Map.empty<Nat, ProductUpdate>();
   let contacts = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let deliveryAddresses = Map.empty<Text, DeliveryAddress>();
+  let orders = Map.empty<Nat, OrderType>();
 
   var logo : ?Logo = null;
+  var siteSettings : SiteSettings = {
+    backgroundImage = null;
+    mapUrl = "https://maps.app.goo.gl/J6bsG7n3H4yPBrPK9";
+    contactDetails = "";
+    certificationsContent = "";
+    certificationsImage = null;
+    aboutContent = "";
+  };
 
-  // Admin authentication state
   var adminCredentials : ?AdminCredentials = null;
   let adminSessions = Map.empty<Text, AdminSession>();
 
-  // Customer authentication state
-  let otpChallenges = Map.empty<Text, OTPChallenge>();
   let customerSessions = Map.empty<Text, CustomerSession>();
 
-  // Session timeout constants (in nanoseconds)
-  let ADMIN_SESSION_TIMEOUT : Int = 24 * 60 * 60 * 1_000_000_000; // 24 hours
-  let CUSTOMER_SESSION_TIMEOUT : Int = 7 * 24 * 60 * 60 * 1_000_000_000; // 7 days
-  let OTP_TIMEOUT : Int = 10 * 60 * 1_000_000_000; // 10 minutes
-  let MAX_OTP_ATTEMPTS : Nat = 3;
+  let ADMIN_SESSION_TIMEOUT : Int = 24 * 60 * 60 * 1_000_000_000;
+  let CUSTOMER_SESSION_TIMEOUT : Int = 7 * 24 * 60 * 60 * 1_000_000_000;
 
-  // AccessControlState initialization
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+  include MixinStorage();
 
-  // Initialize admin credentials with hashed password
   func initializeAdminCredentials() {
     if (adminCredentials.isNull()) {
-      let passwordHash = hashPassword("78982qwertyuiop");
+      let passwordHash = hashPassword("789852qwertyuiop");
       adminCredentials := ?{
         username = "Thejas Kinnigoli";
         email = "thejasumeshpoojary7@gmail.com";
@@ -178,7 +218,6 @@ actor {
     };
   };
 
-  // Simple password hashing (for demonstration purposes only)
   func hashPassword(password : Text) : Text {
     var hash : Nat32 = 5381;
     for (char in password.chars()) {
@@ -187,7 +226,6 @@ actor {
     hash.toText();
   };
 
-  // Generate random session ID
   func generateSessionId() : async Text {
     let entropy = await Random.blob();
     let bytes = entropy.toArray();
@@ -198,27 +236,6 @@ actor {
     sessionId;
   };
 
-  // Generate random OTP (6 digits)
-  func generateOTP() : async Text {
-    let entropy = await Random.blob();
-    let bytes = entropy.toArray();
-    if (bytes.size() == 0) {
-      return "123456"; // Fallback
-    };
-    let num = Nat32.fromNat(bytes[0].toNat()) % 1000000;
-    let otp = num.toText();
-    // Pad with zeros to ensure 6 digits
-    let padding = 6 - otp.size();
-    var paddedOtp = "";
-    var i = 0;
-    while (i < padding) {
-      paddedOtp #= "0";
-      i += 1;
-    };
-    paddedOtp # otp;
-  };
-
-  // Check if admin session is valid
   func isValidAdminSession(sessionId : Text) : Bool {
     switch (adminSessions.get(sessionId)) {
       case (null) { false };
@@ -233,7 +250,6 @@ actor {
     };
   };
 
-  // Check if customer session is valid
   func isValidCustomerSession(sessionId : Text) : Bool {
     switch (customerSessions.get(sessionId)) {
       case (null) { false };
@@ -248,15 +264,19 @@ actor {
     };
   };
 
-  // Get identifier key for OTP challenges
-  func getIdentifierKey(identifier : CustomerIdentifier) : Text {
-    switch (identifier) {
-      case (#email(e)) { "email:" # e };
-      case (#phone(p)) { "phone:" # p };
+  func getCustomerIdentifierFromSession(sessionId : Text) : ?CustomerIdentifier {
+    switch (customerSessions.get(sessionId)) {
+      case (null) { null };
+      case (?session) {
+        if (Time.now() > session.expiresAt) {
+          null;
+        } else {
+          ?session.identifier;
+        };
+      };
     };
   };
 
-  // Admin authentication endpoints
   public shared func adminLogin(username : Text, password : Text) : async ?Text {
     initializeAdminCredentials();
 
@@ -279,6 +299,9 @@ actor {
   };
 
   public shared func adminLogout(sessionId : Text) : async () {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
+    };
     adminSessions.remove(sessionId);
   };
 
@@ -286,80 +309,21 @@ actor {
     isValidAdminSession(sessionId);
   };
 
-  // Customer authentication endpoints
-  public shared func customerRequestOTP(identifier : CustomerIdentifier) : async Bool {
-    let key = getIdentifierKey(identifier);
-
-    // Check if there's an existing challenge
-    switch (otpChallenges.get(key)) {
-      case (?existing) {
-        // If too many attempts, reject
-        if (existing.attempts >= MAX_OTP_ATTEMPTS) {
-          return false;
-        };
-      };
-      case (null) {};
-    };
-
-    let otp = await generateOTP();
-    let otpHash = hashPassword(otp);
-
-    let challenge : OTPChallenge = {
+  public shared func customerLogin(identifier : CustomerIdentifier) : async ?Text {
+    let sessionId = await generateSessionId();
+    let session : CustomerSession = {
+      sessionId = sessionId;
       identifier = identifier;
-      otpHash = otpHash;
-      expiresAt = Time.now() + OTP_TIMEOUT;
-      attempts = 0;
+      expiresAt = Time.now() + CUSTOMER_SESSION_TIMEOUT;
     };
-
-    otpChallenges.add(key, challenge);
-
-    // In production, send OTP via email/SMS
-    // For now, we just store it (in real app, don't log/return OTP)
-    true;
-  };
-
-  public shared func customerVerifyOTP(identifier : CustomerIdentifier, otp : Text) : async ?Text {
-    let key = getIdentifierKey(identifier);
-
-    switch (otpChallenges.get(key)) {
-      case (null) { null };
-      case (?challenge) {
-        if (Time.now() > challenge.expiresAt) {
-          otpChallenges.remove(key);
-          return null;
-        };
-
-        if (challenge.attempts >= MAX_OTP_ATTEMPTS) {
-          otpChallenges.remove(key);
-          return null;
-        };
-
-        if (challenge.otpHash == hashPassword(otp)) {
-          // OTP is correct, create session
-          otpChallenges.remove(key);
-
-          let sessionId = await generateSessionId();
-          let session : CustomerSession = {
-            sessionId = sessionId;
-            identifier = identifier;
-            expiresAt = Time.now() + CUSTOMER_SESSION_TIMEOUT;
-          };
-          customerSessions.add(sessionId, session);
-          ?sessionId;
-        } else {
-          // Increment attempts
-          let updatedChallenge = {
-            challenge with
-            attempts = challenge.attempts + 1;
-          };
-          otpChallenges.add(key, updatedChallenge);
-          null;
-        };
-      };
-    };
+    customerSessions.add(sessionId, session);
+    ?sessionId;
   };
 
   public shared func customerLogout(sessionId : Text) : async () {
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired customer session");
+    };
     customerSessions.remove(sessionId);
   };
 
@@ -368,6 +332,9 @@ actor {
   };
 
   public query func getCustomerSessionInfo(sessionId : Text) : async ?CustomerIdentifier {
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired customer session");
+    };
     switch (customerSessions.get(sessionId)) {
       case (null) { null };
       case (?session) {
@@ -380,7 +347,6 @@ actor {
     };
   };
 
-  // Backward compatibility: Principal-based admin management
   public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
     AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
   };
@@ -396,7 +362,6 @@ actor {
     AccessControl.assignRole(accessControlState, caller, principal, #user);
   };
 
-  // User profile management (requires customer session or Principal-based auth)
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -418,7 +383,6 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // Admin-only operations (require admin session)
   public shared func updateLogo(sessionId : Text, mimeType : Text, data : [Nat8]) : async () {
     if (not isValidAdminSession(sessionId)) {
       Runtime.trap("Unauthorized: Invalid or expired admin session");
@@ -575,8 +539,170 @@ actor {
     seedProductsInternal();
   };
 
-  // Public endpoints (no authentication required)
+  public shared func updateSiteSettings(sessionId : Text, newSettings : SiteSettings) : async () {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
+    };
+    siteSettings := newSettings;
+  };
+
+  public query func getSiteSettings() : async SiteSettings {
+    siteSettings;
+  };
+
+  public shared func saveDeliveryAddress(sessionId : Text, address : DeliveryAddress) : async () {
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired customer session");
+    };
+    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) { Runtime.trap("Unauthorized: Invalid session") };
+      case (?id) { id };
+    };
+    let key = customerIdentifierToText(identifier);
+    deliveryAddresses.add(key, address);
+  };
+
+  public query func getDeliveryAddress(sessionId : Text) : async ?DeliveryAddress {
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired customer session");
+    };
+    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) { Runtime.trap("Unauthorized: Invalid session") };
+      case (?id) { id };
+    };
+    let key = customerIdentifierToText(identifier);
+    deliveryAddresses.get(key);
+  };
+
+  func customerIdentifierToText(identifier : CustomerIdentifier) : Text {
+    switch (identifier) {
+      case (#email(email)) { "email:" # email };
+      case (#phone(phone)) { "phone:" # phone };
+    };
+  };
+
+  public shared func createOrder(
+    sessionId : Text,
+    items : [OrderItem],
+    totalPrice : Float,
+    address : DeliveryAddress,
+  ) : async Nat {
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired customer session");
+    };
+
+    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) { Runtime.trap("Unauthorized: Invalid session") };
+      case (?id) { id };
+    };
+
+    if (items.size() == 0) {
+      Runtime.trap("Order must contain at least one item");
+    };
+
+    let orderId = nextOrderId;
+    nextOrderId += 1;
+
+    let now = Time.now();
+    let order : OrderType = {
+      id = orderId;
+      customerIdentifier = identifier;
+      items = items;
+      totalPrice = totalPrice;
+      status = #pending;
+      address = address;
+      createdAt = now;
+      updatedAt = now;
+    };
+
+    orders.add(orderId, order);
+    orderId;
+  };
+
+  public query func getOrder(sessionId : Text, orderId : Nat) : async ?OrderType {
+    if (isValidAdminSession(sessionId)) {
+      return orders.get(orderId);
+    };
+
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired session");
+    };
+
+    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) { Runtime.trap("Unauthorized: Invalid session") };
+      case (?id) { id };
+    };
+
+    switch (orders.get(orderId)) {
+      case (null) { null };
+      case (?order) {
+        if (customerIdentifierToText(order.customerIdentifier) == customerIdentifierToText(identifier)) {
+          ?order;
+        } else {
+          Runtime.trap("Unauthorized: Can only view your own orders");
+        };
+      };
+    };
+  };
+
+  public query func getCustomerOrders(sessionId : Text) : async [OrderType] {
+    if (not isValidCustomerSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired customer session");
+    };
+
+    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) { Runtime.trap("Unauthorized: Invalid session") };
+      case (?id) { id };
+    };
+
+    let customerKey = customerIdentifierToText(identifier);
+    orders.values().toArray().filter(
+      func(order : OrderType) : Bool {
+        customerIdentifierToText(order.customerIdentifier) == customerKey;
+      }
+    );
+  };
+
+  public query func getAllOrders(sessionId : Text) : async [OrderType] {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
+    };
+    orders.values().toArray();
+  };
+
+  public shared func updateOrderStatus(sessionId : Text, orderId : Nat, newStatus : OrderStatus) : async () {
+    if (not isValidAdminSession(sessionId)) {
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
+    };
+
+    let order = switch (orders.get(orderId)) {
+      case (null) { Runtime.trap("Order not found") };
+      case (?o) { o };
+    };
+
+    let updatedOrder : OrderType = {
+      id = order.id;
+      customerIdentifier = order.customerIdentifier;
+      items = order.items;
+      totalPrice = order.totalPrice;
+      status = newStatus;
+      address = order.address;
+      createdAt = order.createdAt;
+      updatedAt = Time.now();
+    };
+
+    orders.add(orderId, updatedOrder);
+  };
+
+  func filterDeletedProducts(isAdmin : Bool, product : Product) : Bool {
+    isAdmin or not product.isDeleted;
+  };
+
   public shared func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
+    if (name == "" or email == "" or message == "") {
+      Runtime.trap("All fields are required");
+    };
+
     let contactId = nextContactId;
     nextContactId += 1;
     let submission = {
@@ -587,12 +713,7 @@ actor {
       timestamp = Time.now();
     };
     contacts.add(contactId, submission);
-
     contactId;
-  };
-
-  func filterDeletedProducts(isAdmin : Bool, product : Product) : Bool {
-    isAdmin or not product.isDeleted;
   };
 
   public query func getProduct(id : Nat) : async ?Product {
@@ -652,24 +773,18 @@ actor {
     );
   };
 
-  // Admin endpoints with session parameter for viewing deleted products
   public query func getProductAdmin(sessionId : Text, id : Nat) : async ?Product {
     if (not isValidAdminSession(sessionId)) {
-      return null;
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
     products.get(id);
   };
 
   public query func getAllProductsAdmin(sessionId : Text) : async [Product] {
     if (not isValidAdminSession(sessionId)) {
-      return [];
+      Runtime.trap("Unauthorized: Invalid or expired admin session");
     };
     products.values().toArray();
-  };
-
-  public type SeedProductsResult = {
-    #seeded : { count : Nat };
-    #alreadySeeded;
   };
 
   func seedProductsInternal() : SeedProductsResult {
@@ -784,6 +899,10 @@ actor {
     #seeded { count = 4 };
   };
 
-  // Initialize admin credentials on first deployment
+  public type SeedProductsResult = {
+    #seeded : { count : Nat };
+    #alreadySeeded;
+  };
+
   initializeAdminCredentials();
 };

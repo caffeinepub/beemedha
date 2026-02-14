@@ -1,30 +1,52 @@
 import { useState } from 'react';
 import { useCustomerSession } from '../../hooks/useCustomerSession';
+import { useGetDeliveryAddress, useGetCustomerOrders } from '../../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Mail, Phone, LogOut, User } from 'lucide-react';
+import { AlertCircle, Mail, Phone, LogOut, User, MapPin, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CustomerIdentifier } from '../../backend';
+import DeliveryAddressForm from '../orders/DeliveryAddressForm';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CustomerLoginDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+function getOrderStatusBadge(status: string) {
+  switch (status) {
+    case 'pending':
+      return <Badge variant="secondary">Pending</Badge>;
+    case 'inProgress':
+      return <Badge className="bg-blue-500">In Progress</Badge>;
+    case 'transit':
+      return <Badge className="bg-purple-500">In Transit</Badge>;
+    case 'delivered':
+      return <Badge className="bg-green-500">Delivered</Badge>;
+    default:
+      return <Badge>{status}</Badge>;
+  }
+}
+
 export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLoginDialogProps) {
-  const { isValid, customerInfo, requestOTP, verifyOTP, logout } = useCustomerSession();
+  const { isValid, customerInfo, login, logout } = useCustomerSession();
   const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
   const [identifier, setIdentifier] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'identifier' | 'otp'>('identifier');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders'>('profile');
 
-  const handleRequestOTP = async (e: React.FormEvent) => {
+  const addressQuery = useGetDeliveryAddress();
+  const ordersQuery = useGetCustomerOrders();
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -52,50 +74,17 @@ export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLogi
           ? { __kind__: 'email', email: identifier }
           : { __kind__: 'phone', phone: identifier };
 
-      const success = await requestOTP(customerIdentifier);
-      
-      if (success) {
-        toast.success('OTP sent successfully! (Check console for demo OTP)');
-        setStep('otp');
-      } else {
-        setError('Failed to send OTP. Please try again.');
-      }
-    } catch (error) {
-      console.error('Request OTP error:', error);
-      setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!otp.trim() || otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const customerIdentifier: CustomerIdentifier = 
-        identifierType === 'email' 
-          ? { __kind__: 'email', email: identifier }
-          : { __kind__: 'phone', phone: identifier };
-
-      const success = await verifyOTP(customerIdentifier, otp);
+      const success = await login(customerIdentifier);
       
       if (success) {
         toast.success('Login successful!');
-        onOpenChange(false);
-        resetForm();
+        setIdentifier('');
+        setActiveTab('profile');
       } else {
-        setError('Invalid or expired OTP. Please try again.');
+        setError('Login failed. Please try again.');
       }
     } catch (error) {
-      console.error('Verify OTP error:', error);
+      console.error('Login error:', error);
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -103,63 +92,103 @@ export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLogi
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Logged out successfully');
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout');
-    }
-  };
-
-  const resetForm = () => {
+    await logout();
+    toast.success('Logged out successfully');
+    onOpenChange(false);
     setIdentifier('');
-    setOtp('');
-    setStep('identifier');
     setError('');
   };
 
-  const handleBack = () => {
-    setStep('identifier');
-    setOtp('');
-    setError('');
-  };
-
-  const getDisplayIdentifier = () => {
+  const getIdentifierDisplay = () => {
     if (!customerInfo) return '';
     if (customerInfo.__kind__ === 'email') return customerInfo.email;
     if (customerInfo.__kind__ === 'phone') return customerInfo.phone;
     return '';
   };
 
-  // If already logged in, show logged-in state
   if (isValid && customerInfo) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">Account</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              My Account
+            </DialogTitle>
             <DialogDescription>
-              You are currently logged in
+              Logged in as {getIdentifierDisplay()}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-5 w-5 text-primary" />
+
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'profile' | 'orders')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="profile">
+                <MapPin className="h-4 w-4 mr-2" />
+                Profile & Address
+              </TabsTrigger>
+              <TabsTrigger value="orders">
+                <Package className="h-4 w-4 mr-2" />
+                My Orders
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile" className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-3">Delivery Address</h3>
+                <DeliveryAddressForm 
+                  initialAddress={addressQuery.data || undefined}
+                  onSuccess={() => {
+                    toast.success('Address saved successfully');
+                  }}
+                />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Logged in as</p>
-                <p className="text-sm text-muted-foreground">{getDisplayIdentifier()}</p>
+            </TabsContent>
+
+            <TabsContent value="orders" className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-3">Order History</h3>
+                {ordersQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading orders...</p>
+                ) : ordersQuery.data && ordersQuery.data.length > 0 ? (
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {ordersQuery.data.map((order) => (
+                        <div key={order.id.toString()} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold">Order #{order.id.toString()}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(Number(order.createdAt) / 1000000).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {getOrderStatusBadge(order.status)}
+                          </div>
+                          <Separator />
+                          <div className="space-y-2">
+                            <p className="text-sm">
+                              <span className="font-medium">Items:</span> {order.items.length}
+                            </p>
+                            <p className="text-sm">
+                              <span className="font-medium">Total:</span> ₹{order.totalPrice.toFixed(2)}
+                            </p>
+                            <p className="text-sm">
+                              <span className="font-medium">Delivery to:</span> {order.address.name}, {order.address.city}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No orders yet</p>
+                )}
               </div>
-            </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="w-full"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
           </div>
@@ -169,41 +198,30 @@ export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLogi
   }
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      onOpenChange(open);
-      if (!open) resetForm();
-    }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl">Customer Login</DialogTitle>
+          <DialogTitle>Customer Login</DialogTitle>
           <DialogDescription>
-            {step === 'identifier' 
-              ? 'Enter your email or phone number to receive an OTP'
-              : 'Enter the OTP sent to your email or phone'}
+            Enter your email or phone number to access your account
           </DialogDescription>
         </DialogHeader>
 
-        {step === 'identifier' ? (
-          <form onSubmit={handleRequestOTP} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Tabs value={identifierType} onValueChange={(v) => setIdentifierType(v as 'email' | 'phone')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </TabsTrigger>
+              <TabsTrigger value="phone">
+                <Phone className="h-4 w-4 mr-2" />
+                Phone
+              </TabsTrigger>
+            </TabsList>
 
-            <Tabs value={identifierType} onValueChange={(v) => setIdentifierType(v as 'email' | 'phone')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="email">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Email
-                </TabsTrigger>
-                <TabsTrigger value="phone">
-                  <Phone className="h-4 w-4 mr-2" />
-                  Phone
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="email" className="space-y-2">
+            <TabsContent value="email" className="space-y-4 mt-4">
+              <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
@@ -213,8 +231,11 @@ export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLogi
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={isLoading}
                 />
-              </TabsContent>
-              <TabsContent value="phone" className="space-y-2">
+              </div>
+            </TabsContent>
+
+            <TabsContent value="phone" className="space-y-4 mt-4">
+              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
@@ -224,63 +245,21 @@ export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLogi
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={isLoading}
                 />
-              </TabsContent>
-            </Tabs>
+              </div>
+            </TabsContent>
+          </Tabs>
 
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Sending OTP...' : 'Send OTP'}
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOTP} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="otp">Enter OTP</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="123456"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                disabled={isLoading}
-                className="text-center text-lg tracking-widest"
-              />
-              <p className="text-xs text-muted-foreground text-center">
-                OTP sent to {identifier}
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBack}
-                disabled={isLoading}
-                className="flex-1"
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-primary hover:bg-primary/90"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Verifying...' : 'Verify OTP'}
-              </Button>
-            </div>
-          </form>
-        )}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
   );

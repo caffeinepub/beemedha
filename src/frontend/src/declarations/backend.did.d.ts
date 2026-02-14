@@ -25,6 +25,16 @@ export interface ContactFormSubmission {
 }
 export type CustomerIdentifier = { 'email' : string } |
   { 'phone' : string };
+export interface DeliveryAddress {
+  'country' : string,
+  'city' : string,
+  'postalCode' : string,
+  'name' : string,
+  'state' : string,
+  'addressLine1' : string,
+  'addressLine2' : string,
+  'phoneNumber' : string,
+}
 export interface FlavorVariant {
   'weight' : bigint,
   'flavor' : string,
@@ -32,6 +42,26 @@ export interface FlavorVariant {
   'price' : Price,
 }
 export interface Logo { 'data' : Uint8Array, 'mimeType' : string }
+export interface OrderItem {
+  'productId' : bigint,
+  'flavorVariant' : [] | [FlavorVariant],
+  'quantity' : bigint,
+  'weightVariant' : [] | [WeightVariant],
+}
+export type OrderStatus = { 'pending' : null } |
+  { 'transit' : null } |
+  { 'delivered' : null } |
+  { 'inProgress' : null };
+export interface OrderType {
+  'id' : bigint,
+  'status' : OrderStatus,
+  'customerIdentifier' : CustomerIdentifier,
+  'createdAt' : Time,
+  'updatedAt' : Time,
+  'address' : DeliveryAddress,
+  'items' : Array<OrderItem>,
+  'totalPrice' : number,
+}
 export interface Price { 'salePrice' : [] | [number], 'listPrice' : number }
 export interface Product {
   'id' : bigint,
@@ -62,6 +92,14 @@ export type ProductVariants = { 'weight' : Array<WeightVariant> } |
   { 'flavor' : Array<FlavorVariant> };
 export type SeedProductsResult = { 'seeded' : { 'count' : bigint } } |
   { 'alreadySeeded' : null };
+export interface SiteSettings {
+  'certificationsContent' : string,
+  'backgroundImage' : [] | [string],
+  'mapUrl' : string,
+  'aboutContent' : string,
+  'certificationsImage' : [] | [string],
+  'contactDetails' : string,
+}
 export type Time = bigint;
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
@@ -72,12 +110,42 @@ export interface WeightVariant {
   'description' : string,
   'price' : Price,
 }
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addAdmin' : ActorMethod<[Principal], undefined>,
   'adminLogin' : ActorMethod<[string, string], [] | [string]>,
   'adminLogout' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'createOrder' : ActorMethod<
+    [string, Array<OrderItem>, number, DeliveryAddress],
+    bigint
+  >,
   'createProduct' : ActorMethod<
     [
       string,
@@ -96,14 +164,11 @@ export interface _SERVICE {
     [string, ProductUpdateType, bigint, string],
     bigint
   >,
+  'customerLogin' : ActorMethod<[CustomerIdentifier], [] | [string]>,
   'customerLogout' : ActorMethod<[string], undefined>,
-  'customerRequestOTP' : ActorMethod<[CustomerIdentifier], boolean>,
-  'customerVerifyOTP' : ActorMethod<
-    [CustomerIdentifier, string],
-    [] | [string]
-  >,
   'deleteProduct' : ActorMethod<[string, bigint], undefined>,
   'deleteProductUpdate' : ActorMethod<[string, bigint], undefined>,
+  'getAllOrders' : ActorMethod<[string], Array<OrderType>>,
   'getAllProductUpdates' : ActorMethod<[], Array<ProductUpdate>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
   'getAllProductsAdmin' : ActorMethod<[string], Array<Product>>,
@@ -113,9 +178,12 @@ export interface _SERVICE {
     [string],
     Array<ContactFormSubmission>
   >,
+  'getCustomerOrders' : ActorMethod<[string], Array<OrderType>>,
   'getCustomerSessionInfo' : ActorMethod<[string], [] | [CustomerIdentifier]>,
+  'getDeliveryAddress' : ActorMethod<[string], [] | [DeliveryAddress]>,
   'getLimitedProducts' : ActorMethod<[], Array<Product>>,
   'getLogo' : ActorMethod<[], [] | [Logo]>,
+  'getOrder' : ActorMethod<[string, bigint], [] | [OrderType]>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
   'getProductAdmin' : ActorMethod<[string, bigint], [] | [Product]>,
   'getProductUpdatesByProduct' : ActorMethod<[bigint], Array<ProductUpdate>>,
@@ -124,14 +192,17 @@ export interface _SERVICE {
     Array<ProductUpdate>
   >,
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
+  'getSiteSettings' : ActorMethod<[], SiteSettings>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'promoteToUser' : ActorMethod<[Principal], undefined>,
   'removeAdmin' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveDeliveryAddress' : ActorMethod<[string, DeliveryAddress], undefined>,
   'seedProducts' : ActorMethod<[string], SeedProductsResult>,
   'submitContactForm' : ActorMethod<[string, string, string], bigint>,
   'updateLogo' : ActorMethod<[string, string, Uint8Array], undefined>,
+  'updateOrderStatus' : ActorMethod<[string, bigint, OrderStatus], undefined>,
   'updateProduct' : ActorMethod<
     [
       string,
@@ -147,6 +218,7 @@ export interface _SERVICE {
     ],
     undefined
   >,
+  'updateSiteSettings' : ActorMethod<[string, SiteSettings], undefined>,
   'validateAdminSession' : ActorMethod<[string], boolean>,
   'validateCustomerSession' : ActorMethod<[string], boolean>,
 }

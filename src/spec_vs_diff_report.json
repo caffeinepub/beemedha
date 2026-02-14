@@ -1,97 +1,44 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T16:33:10.311Z",
-  "summary": "Diff implements password-based admin sessions (frontend guard + login page + session hooks) and adds a customer OTP login dialog with session persistence. However, some admin-routing/login flow details and some backend/feature changes appear incomplete or unrelated to the BuildRequest.",
+  "generatedAt": "2026-02-14T03:38:27.399Z",
+  "summary": "Frontend routing appears to remove/avoid the Internet Identity-based admin access route, but the diff does not provide enough evidence that the Internet Identity UI/gating was fully removed across the admin area or that the backend admin credential initialization was updated to the specified fixed username/password using the existing hashPassword flow. Some additional admin-guard-related components were modified/introduced without a clear link to the requested changes.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "After successful admin login, route the user to the admin dashboard and allow access to existing admin pages (dashboard, products, news, logo, access) without Internet Identity prompts.",
-      "reason": "The new AdminLoginPage navigates to \"/admin/products\" after login, and routing shows the dashboard mounted under \"/owner\" instead of an admin path. This does not match the requirement to land on (and access) the existing admin dashboard under the admin area.",
+      "requirement": "Update backend admin credential initialization so the only valid admin login is username \"Thejas Kinnigoli\" with password \"789852qwertyuiop\", stored/checked via the existing password hashing mechanism.",
+      "reason": "backend/main.mo is truncated before any admin credential initialization or adminLogin implementation details are shown, so there is no evidence that the fixed username/password was set or that hashPassword is used for storage/verification.",
       "evidence": [
-        "frontend/src/pages/admin/AdminLoginPage.tsx",
-        "frontend/src/App.tsx"
+        "backend/main.mo (truncated)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Admin authentication must support the provided admin credentials including username, email, and password (with password not stored/compared as plaintext).",
-      "reason": "Frontend login only collects \"Username\" + \"Password\" and calls actor.adminLogin(username, password). There is no evidence in the diff summary that the backend login validates against the provided email as an alternative identifier (or otherwise uses the email field in authentication). Backend changes are truncated before credential verification details are shown.",
+      "requirement": "Remove Internet Identity (passkey) authentication requirements and UI from the admin area so admin access is granted only via username/password admin session flow.",
+      "reason": "App routing changes suggest the /admin/access route was removed, but the diff does not show the contents of AdminAccessPage or any admin UI components/guards where Internet Identity prompts or gating might exist. There is also no evidence that the relevant guard logic was updated to rely only on the username/password admin session validation.",
       "evidence": [
-        "frontend/src/pages/admin/AdminLoginPage.tsx",
-        "frontend/src/hooks/useAdminSession.ts",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Update all admin-only backend operations used by the admin UI (at minimum: create/update/delete product, create/delete product update, update logo, view contact submissions, seed products) so they authorize using the new password-admin session rather than Internet Identity roles.",
-      "reason": "The diff shows frontend mutations for products now pass an admin sessionId, but evidence is not shown for all required operations (notably contact-submission viewing and seed products) being updated on the backend to enforce session-based authorization. backend/main.mo is truncated before authorization checks/method updates can be confirmed.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Ensure /admin and /admin/* use the new password-admin guard and that admin dashboard is part of /admin/* routes (so existing admin pages are accessible under /#/admin/*).",
-      "reason": "App routes show /admin is the login page and several /admin/* routes are guarded, but the dashboard is not under /admin/* (it appears under /owner). This does not satisfy the expectation that the admin dashboard is accessible as part of the /admin area after login.",
-      "evidence": [
-        "frontend/src/App.tsx"
+        "frontend/src/App.tsx (truncated)",
+        "frontend/src/pages/admin/AdminAccessPage.tsx",
+        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added extensive Terms and Conditions page content and related footer/legal UI work not requested by the BuildRequest.",
-      "reason": "BuildRequest focuses on admin password login and customer OTP login; it does not request legal/terms content or footer rebuilds.",
+      "description": "Addition/modification of an OwnerOnlyRouteGuard component (owner/principal-based gating).",
+      "reason": "The BuildRequest explicitly moves away from Internet Identity/principal-based admin auth and does not request adding an owner-only/principal-based route guard; this may reintroduce non-goal behavior or be unrelated to the requested username/password flow.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/TermsPage.tsx)",
-        "frontend-file-summaries.txt (frontend/src/components/layout/Footer.tsx)"
-      ]
-    },
-    {
-      "description": "Added/modified product price formatting utilities and multiple product UI enhancements (PriceDisplay, variant selection, product card/detail changes, asset URL normalization).",
-      "reason": "Not part of requested authentication changes; these are unrelated product UI feature enhancements.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/utils/price.ts)",
-        "frontend-file-summaries.txt (frontend/src/components/products/PriceDisplay.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/ProductDetailPage.tsx)",
-        "frontend-file-summaries.txt (frontend/src/components/products/ProductCard.tsx)",
-        "frontend-file-summaries.txt (frontend/src/utils/assets.ts)"
-      ]
-    },
-    {
-      "description": "Added custom domain documentation (frontend/docs/custom-domain.md).",
-      "reason": "Not requested; outside the authentication scope.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/docs/custom-domain.md)"
-      ]
-    },
-    {
-      "description": "Introduced an additional protected route at /owner that renders the admin dashboard.",
-      "reason": "BuildRequest specifies /#/admin as the admin entry point and /#/admin/* for admin pages; /owner is not requested.",
-      "evidence": [
-        "frontend/src/App.tsx"
+        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/admin/AdminRouteGuard.tsx",
-    "frontend/src/components/auth/CustomerLoginDialog.tsx",
-    "frontend/src/components/layout/Header.tsx",
-    "frontend/src/hooks/useAdminSession.ts",
-    "frontend/src/hooks/useCustomerSession.ts",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
     "frontend/src/pages/admin/AdminAccessPage.tsx",
-    "frontend/src/pages/admin/AdminLoginPage.tsx",
-    "frontend/src/pages/admin/AdminLogoPage.tsx",
-    "frontend/src/pages/admin/AdminNewsPage.tsx",
-    "frontend/src/pages/admin/AdminProductsPage.tsx",
     "project_state.json"
   ]
 }

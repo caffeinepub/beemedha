@@ -1,37 +1,46 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute, createHashHistory } from '@tanstack/react-router';
-import { ThemeProvider } from 'next-themes';
+import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
-import AboutPage from './pages/AboutPage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import NewsPage from './pages/NewsPage';
 import NewsDetailPage from './pages/NewsDetailPage';
-import CertificationsPage from './pages/CertificationsPage';
+import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import CertificationsPage from './pages/CertificationsPage';
 import TermsPage from './pages/TermsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminNewsPage from './pages/admin/AdminNewsPage';
 import AdminLogoPage from './pages/admin/AdminLogoPage';
-import AdminAccessPage from './pages/admin/AdminAccessPage';
+import AdminSiteSettingsPage from './pages/admin/AdminSiteSettingsPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminRouteGuard from './components/admin/AdminRouteGuard';
+import { Toaster } from '@/components/ui/sonner';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const rootRoute = createRootRoute({
-  component: SiteLayout,
+  component: () => (
+    <SiteLayout>
+      <Outlet />
+    </SiteLayout>
+  ),
 });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: HomePage,
-});
-
-const aboutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/about',
-  component: AboutPage,
 });
 
 const productsRoute = createRoute({
@@ -58,10 +67,10 @@ const newsDetailRoute = createRoute({
   component: NewsDetailPage,
 });
 
-const certificationsRoute = createRoute({
+const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/certifications',
-  component: CertificationsPage,
+  path: '/about',
+  component: AboutPage,
 });
 
 const contactRoute = createRoute({
@@ -70,21 +79,27 @@ const contactRoute = createRoute({
   component: ContactPage,
 });
 
+const certificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/certifications',
+  component: CertificationsPage,
+});
+
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/terms',
   component: TermsPage,
 });
 
-const adminRoute = createRoute({
+const adminLoginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
   component: AdminLoginPage,
 });
 
-const ownerRoute = createRoute({
+const adminDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/owner',
+  path: '/admin/dashboard',
   component: () => (
     <AdminRouteGuard>
       <AdminDashboardPage />
@@ -122,41 +137,46 @@ const adminLogoRoute = createRoute({
   ),
 });
 
-const adminAccessRoute = createRoute({
+const adminSettingsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/admin/access',
+  path: '/admin/settings',
   component: () => (
     <AdminRouteGuard>
-      <AdminAccessPage />
+      <AdminSiteSettingsPage />
+    </AdminRouteGuard>
+  ),
+});
+
+const adminOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/orders',
+  component: () => (
+    <AdminRouteGuard>
+      <AdminOrdersPage />
     </AdminRouteGuard>
   ),
 });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  aboutRoute,
   productsRoute,
   productDetailRoute,
   newsRoute,
   newsDetailRoute,
-  certificationsRoute,
+  aboutRoute,
   contactRoute,
+  certificationsRoute,
   termsRoute,
-  adminRoute,
-  ownerRoute,
+  adminLoginRoute,
+  adminDashboardRoute,
   adminProductsRoute,
   adminNewsRoute,
   adminLogoRoute,
-  adminAccessRoute,
+  adminSettingsRoute,
+  adminOrdersRoute,
 ]);
 
-const hashHistory = createHashHistory();
-
-const router = createRouter({
-  routeTree,
-  history: hashHistory,
-  defaultPreload: 'intent',
-});
+const router = createRouter({ routeTree, defaultPreload: 'intent' });
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -166,8 +186,9 @@ declare module '@tanstack/react-router' {
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-    </ThemeProvider>
+      <Toaster />
+    </QueryClientProvider>
   );
 }

@@ -49,22 +49,11 @@ export function useCustomerSession() {
     validateSession();
   }, [actor, sessionId]);
 
-  const requestOTP = async (identifier: CustomerIdentifier): Promise<boolean> => {
+  const login = async (identifier: CustomerIdentifier): Promise<boolean> => {
     if (!actor) throw new Error('Actor not available');
 
     try {
-      return await actor.customerRequestOTP(identifier);
-    } catch (error) {
-      console.error('Request OTP error:', error);
-      return false;
-    }
-  };
-
-  const verifyOTP = async (identifier: CustomerIdentifier, otp: string): Promise<boolean> => {
-    if (!actor) throw new Error('Actor not available');
-
-    try {
-      const newSessionId = await actor.customerVerifyOTP(identifier, otp);
+      const newSessionId = await actor.customerLogin(identifier);
       if (newSessionId) {
         localStorage.setItem(CUSTOMER_SESSION_KEY, newSessionId);
         setSessionId(newSessionId);
@@ -74,7 +63,7 @@ export function useCustomerSession() {
       }
       return false;
     } catch (error) {
-      console.error('Verify OTP error:', error);
+      console.error('Login error:', error);
       return false;
     }
   };
@@ -98,8 +87,7 @@ export function useCustomerSession() {
     isValid,
     isValidating,
     customerInfo,
-    requestOTP,
-    verifyOTP,
+    login,
     logout,
   };
 }

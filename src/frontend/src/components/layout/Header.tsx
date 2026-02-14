@@ -1,22 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, ShoppingBag, LogOut, Lock } from 'lucide-react';
+import { Menu, ShoppingBag } from 'lucide-react';
 import { useGetLogo } from '../../hooks/useQueries';
 import { logoToUrl } from '../../utils/logo';
-import { useAdminSession } from '../../hooks/useAdminSession';
 import { useCustomerSession } from '../../hooks/useCustomerSession';
+import { useIsAdminRoute } from '../../hooks/useIsAdminRoute';
 import CustomerLoginDialog from '../auth/CustomerLoginDialog';
-import { toast } from 'sonner';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isCustomerLoginOpen, setIsCustomerLoginOpen] = useState(false);
   const navigate = useNavigate();
   const { data: logo } = useGetLogo();
-  const { isValid: isAdminLoggedIn, logout: adminLogout } = useAdminSession();
   const { isValid: isCustomerLoggedIn } = useCustomerSession();
+  const isAdminRoute = useIsAdminRoute();
 
   const logoUrl = logo ? logoToUrl(logo) ?? '/assets/image.png' : '/assets/image.png';
 
@@ -29,16 +28,15 @@ export default function Header() {
     { to: '/contact', label: 'Contact' },
   ];
 
-  const handleAdminLogout = async () => {
-    try {
-      await adminLogout();
-      toast.success('Admin logged out successfully');
-      navigate({ to: '/admin' });
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout');
+  // Close customer login dialog when navigating to admin routes
+  useEffect(() => {
+    if (isAdminRoute && isCustomerLoginOpen) {
+      setIsCustomerLoginOpen(false);
     }
-  };
+  }, [isAdminRoute, isCustomerLoginOpen]);
+
+  // Don't render customer login dialog on admin routes
+  const shouldShowCustomerLogin = !isAdminRoute;
 
   return (
     <>
@@ -78,52 +76,27 @@ export default function Header() {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-2">
-              {isCustomerLoggedIn ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCustomerLoginOpen(true)}
-                >
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  Account
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCustomerLoginOpen(true)}
-                >
-                  Login
-                </Button>
-              )}
-
-              {isAdminLoggedIn ? (
+              {shouldShowCustomerLogin && (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate({ to: '/admin/products' })}
-                  >
-                    <Lock className="h-4 w-4 mr-2" />
-                    Admin
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleAdminLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
+                  {isCustomerLoggedIn ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsCustomerLoginOpen(true)}
+                    >
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Account
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsCustomerLoginOpen(true)}
+                    >
+                      Login
+                    </Button>
+                  )}
                 </>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate({ to: '/admin' })}
-                >
-                  <Lock className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
               )}
             </div>
 
@@ -149,71 +122,34 @@ export default function Header() {
                       {link.label}
                     </Link>
                   ))}
-                  <div className="pt-4 border-t space-y-2">
-                    {isCustomerLoggedIn ? (
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          setIsOpen(false);
-                          setIsCustomerLoginOpen(true);
-                        }}
-                      >
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        Account
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          setIsOpen(false);
-                          setIsCustomerLoginOpen(true);
-                        }}
-                      >
-                        Customer Login
-                      </Button>
-                    )}
-
-                    {isAdminLoggedIn ? (
-                      <>
+                  {shouldShowCustomerLogin && (
+                    <div className="pt-4 border-t space-y-2">
+                      {isCustomerLoggedIn ? (
                         <Button
                           variant="outline"
                           className="w-full justify-start"
                           onClick={() => {
                             setIsOpen(false);
-                            navigate({ to: '/admin/products' });
+                            setIsCustomerLoginOpen(true);
                           }}
                         >
-                          <Lock className="h-4 w-4 mr-2" />
-                          Admin Panel
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          Account
                         </Button>
+                      ) : (
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           className="w-full justify-start"
                           onClick={() => {
                             setIsOpen(false);
-                            handleAdminLogout();
+                            setIsCustomerLoginOpen(true);
                           }}
                         >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          Admin Logout
+                          Customer Login
                         </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          setIsOpen(false);
-                          navigate({ to: '/admin' });
-                        }}
-                      >
-                        <Lock className="h-4 w-4 mr-2" />
-                        Admin Login
-                      </Button>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -221,10 +157,12 @@ export default function Header() {
         </div>
       </header>
 
-      <CustomerLoginDialog
-        open={isCustomerLoginOpen}
-        onOpenChange={setIsCustomerLoginOpen}
-      />
+      {shouldShowCustomerLogin && (
+        <CustomerLoginDialog
+          open={isCustomerLoginOpen}
+          onOpenChange={setIsCustomerLoginOpen}
+        />
+      )}
     </>
   );
 }

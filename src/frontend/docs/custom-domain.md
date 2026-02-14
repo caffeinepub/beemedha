@@ -24,3 +24,30 @@ You can use either:
 
 Add a **CNAME record** in your DNS provider:
 
+| Type  | Name | Value                    | TTL  |
+|-------|------|--------------------------|------|
+| CNAME | www  | icp1.io                  | 3600 |
+
+Or for a custom subdomain:
+
+| Type  | Name | Value                    | TTL  |
+|-------|------|--------------------------|------|
+| CNAME | app  | icp1.io                  | 3600 |
+
+### For Apex Domain
+
+Add **A records** pointing to Internet Computer boundary nodes:
+
+| Type | Name | Value           | TTL  |
+|------|------|-----------------|------|
+| A    | @    | 147.75.83.226   | 3600 |
+| A    | @    | 147.75.83.227   | 3600 |
+
+**Note:** Apex domain setup may require additional configuration depending on your DNS provider.
+
+## Step 3: Register Domain with Internet Computer
+
+After DNS records are configured and propagated (usually 5-60 minutes), register your domain with the Internet Computer boundary nodes.
+
+### Using dfx CLI
+

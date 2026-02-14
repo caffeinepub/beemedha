@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
 import { useAdminSession } from './useAdminSession';
-import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants, Logo } from '../backend';
+import { useCustomerSession } from './useCustomerSession';
+import type { Product, ProductUpdate, ContactFormSubmission, Category, ProductUpdateType, AvailabilityStatus, UserProfile, Price, SeedProductsResult, ProductVariants, Logo, SiteSettings, DeliveryAddress, OrderType, OrderItem, OrderStatus } from '../backend';
 import { useLiveUpdateConfig } from './useLiveUpdateConfig';
 import { Principal } from '@dfinity/principal';
 
@@ -401,6 +402,141 @@ export function useUpdateLogo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logo'] });
+    },
+  });
+}
+
+// Site Settings
+export function useGetSiteSettings() {
+  const { actor, isFetching } = useActor();
+  const { refetchInterval, refetchOnWindowFocus } = useLiveUpdateConfig();
+
+  return useQuery<SiteSettings>({
+    queryKey: ['siteSettings'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getSiteSettings();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval,
+    refetchOnWindowFocus,
+  });
+}
+
+export function useUpdateSiteSettings() {
+  const { actor } = useActor();
+  const { sessionId } = useAdminSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (settings: SiteSettings) => {
+      if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Admin session required');
+      return actor.updateSiteSettings(sessionId, settings);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['siteSettings'] });
+    },
+  });
+}
+
+// Delivery Address
+export function useGetDeliveryAddress() {
+  const { actor, isFetching } = useActor();
+  const { sessionId } = useCustomerSession();
+
+  return useQuery<DeliveryAddress | null>({
+    queryKey: ['deliveryAddress', sessionId],
+    queryFn: async () => {
+      if (!actor || !sessionId) return null;
+      return actor.getDeliveryAddress(sessionId);
+    },
+    enabled: !!actor && !isFetching && !!sessionId,
+  });
+}
+
+export function useSaveDeliveryAddress() {
+  const { actor } = useActor();
+  const { sessionId } = useCustomerSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (address: DeliveryAddress) => {
+      if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Customer session required');
+      return actor.saveDeliveryAddress(sessionId, address);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deliveryAddress'] });
+    },
+  });
+}
+
+// Orders
+export function useCreateOrder() {
+  const { actor } = useActor();
+  const { sessionId } = useCustomerSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      items: OrderItem[];
+      totalPrice: number;
+      address: DeliveryAddress;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Customer session required');
+      return actor.createOrder(sessionId, data.items, data.totalPrice, data.address);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customerOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['allOrders'] });
+    },
+  });
+}
+
+export function useGetCustomerOrders() {
+  const { actor, isFetching } = useActor();
+  const { sessionId } = useCustomerSession();
+
+  return useQuery<OrderType[]>({
+    queryKey: ['customerOrders', sessionId],
+    queryFn: async () => {
+      if (!actor || !sessionId) return [];
+      return actor.getCustomerOrders(sessionId);
+    },
+    enabled: !!actor && !isFetching && !!sessionId,
+  });
+}
+
+export function useGetAllOrders() {
+  const { actor, isFetching } = useActor();
+  const { sessionId } = useAdminSession();
+
+  return useQuery<OrderType[]>({
+    queryKey: ['allOrders'],
+    queryFn: async () => {
+      if (!actor || !sessionId) return [];
+      return actor.getAllOrders(sessionId);
+    },
+    enabled: !!actor && !isFetching && !!sessionId,
+  });
+}
+
+export function useUpdateOrderStatus() {
+  const { actor } = useActor();
+  const { sessionId } = useAdminSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { orderId: bigint; newStatus: OrderStatus }) => {
+      if (!actor) throw new Error('Actor not available');
+      if (!sessionId) throw new Error('Admin session required');
+      return actor.updateOrderStatus(sessionId, data.orderId, data.newStatus);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['customerOrders'] });
     },
   });
 }

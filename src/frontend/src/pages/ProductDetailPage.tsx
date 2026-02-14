@@ -3,15 +3,17 @@ import { useParams, useNavigate } from '@tanstack/react-router';
 import { Section, Container, BrandCard } from '../components/brand/BrandPrimitives';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useGetProduct, useGetProductUpdatesByProduct } from '../hooks/useQueries';
+import { useCustomerSession } from '../hooks/useCustomerSession';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import PurchasePlaceholder from '../components/products/PurchasePlaceholder';
 import PriceDisplay from '../components/products/PriceDisplay';
 import VariantSelector from '../components/products/VariantSelector';
-import { ArrowLeft, Package, Leaf, Award } from 'lucide-react';
-import type { AvailabilityStatus, Price } from '../backend';
+import PlaceOrderDialog from '../components/orders/PlaceOrderDialog';
+import { ArrowLeft, Package, Leaf, Award, ShoppingCart } from 'lucide-react';
+import type { AvailabilityStatus, Price, OrderItem, WeightVariant, FlavorVariant } from '../backend';
 import { normalizeAssetUrl } from '../utils/assets';
+import { toast } from 'sonner';
 
 function getAvailabilityBadge(status: AvailabilityStatus) {
   switch (status) {
@@ -45,6 +47,7 @@ function getCategoryName(category: string): string {
 export default function ProductDetailPage() {
   const { productId } = useParams({ from: '/products/$productId' });
   const navigate = useNavigate();
+  const { isValid: isLoggedIn } = useCustomerSession();
   
   const productQuery = useGetProduct(BigInt(productId));
   const product = productQuery.data;
@@ -55,6 +58,10 @@ export default function ProductDetailPage() {
   // State for variant selection
   const [selectedVariantPrice, setSelectedVariantPrice] = useState<Price | null>(null);
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
+  const [selectedWeightVariant, setSelectedWeightVariant] = useState<WeightVariant | null>(null);
+  const [selectedFlavorVariant, setSelectedFlavorVariant] = useState<FlavorVariant | null>(null);
+  const [quantity, setQuantity] = useState<bigint>(1n);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
 
   usePageMeta(
     product?.name || 'Product Details',
@@ -96,6 +103,38 @@ export default function ProductDetailPage() {
 
   // Determine which price to display
   const displayPrice = selectedVariantPrice || product.price;
+
+  const handlePlaceOrder = () => {
+    if (!isLoggedIn) {
+      toast.error('Please log in to place an order');
+      return;
+    }
+
+    if (product.availability === 'outOfStock') {
+      toast.error('This product is currently out of stock');
+      return;
+    }
+
+    const orderItem: OrderItem = {
+      productId: product.id,
+      quantity,
+      weightVariant: selectedWeightVariant || undefined,
+      flavorVariant: selectedFlavorVariant || undefined,
+    };
+
+    const totalPrice = (selectedVariantPrice?.salePrice || selectedVariantPrice?.listPrice || product.price.salePrice || product.price.listPrice) * Number(quantity);
+
+    setOrderDialogOpen(true);
+  };
+
+  const orderItems: OrderItem[] = [{
+    productId: product.id,
+    quantity,
+    weightVariant: selectedWeightVariant || undefined,
+    flavorVariant: selectedFlavorVariant || undefined,
+  }];
+
+  const totalPrice = (selectedVariantPrice?.salePrice || selectedVariantPrice?.listPrice || product.price.salePrice || product.price.listPrice) * Number(quantity);
 
   return (
     <div>
@@ -143,9 +182,11 @@ export default function ProductDetailPage() {
                 <>
                   <VariantSelector
                     variants={product.variants}
-                    onVariantChange={(price, label) => {
+                    onVariantChange={(price, label, weightVariant, flavorVariant) => {
                       setSelectedVariantPrice(price);
                       setSelectedVariantLabel(label);
+                      setSelectedWeightVariant(weightVariant || null);
+                      setSelectedFlavorVariant(flavorVariant || null);
                     }}
                   />
                   <Separator />
@@ -158,7 +199,17 @@ export default function ProductDetailPage() {
                   {getAvailabilityBadge(product.availability)}
                 </div>
 
-                <PurchasePlaceholder />
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={handlePlaceOrder}
+                    disabled={product.availability === 'outOfStock'}
+                    size="lg"
+                    className="flex-1"
+                  >
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Place Order
+                  </Button>
+                </div>
               </div>
 
               <Separator />
@@ -228,6 +279,13 @@ export default function ProductDetailPage() {
           </Container>
         </Section>
       )}
+
+      <PlaceOrderDialog
+        open={orderDialogOpen}
+        onOpenChange={setOrderDialogOpen}
+        orderItems={orderItems}
+        totalPrice={totalPrice}
+      />
     </div>
   );
 }

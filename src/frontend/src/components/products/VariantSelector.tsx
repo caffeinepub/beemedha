@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type { ProductVariants, WeightVariant, FlavorVariant, Price } from '../../backend';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { ProductVariants, Price, WeightVariant, FlavorVariant } from '../../backend';
 
 interface VariantSelectorProps {
   variants: ProductVariants;
-  onVariantChange: (price: Price, label: string) => void;
+  onVariantChange: (price: Price, label: string, weightVariant?: WeightVariant, flavorVariant?: FlavorVariant) => void;
 }
 
 export default function VariantSelector({ variants, onVariantChange }: VariantSelectorProps) {
@@ -13,76 +13,99 @@ export default function VariantSelector({ variants, onVariantChange }: VariantSe
 
   if (variants.__kind__ === 'weight') {
     const weightVariants = variants.weight;
-    
-    const handleSelect = (index: number) => {
+
+    const handleChange = (index: number) => {
       setSelectedIndex(index);
       const variant = weightVariants[index];
-      onVariantChange(variant.price, `${variant.weight}g`);
+      onVariantChange(variant.price, `${variant.weight}g`, variant, undefined);
     };
 
-    // Initialize with first variant
+    // Auto-select first variant on mount
     if (selectedIndex === 0 && weightVariants.length > 0) {
-      setTimeout(() => onVariantChange(weightVariants[0].price, `${weightVariants[0].weight}g`), 0);
+      setTimeout(() => handleChange(0), 0);
     }
 
     return (
       <div className="space-y-3">
         <Label className="text-base font-semibold">Select Weight</Label>
-        <div className="flex flex-wrap gap-2">
+        <RadioGroup
+          value={selectedIndex.toString()}
+          onValueChange={(value) => handleChange(parseInt(value))}
+        >
           {weightVariants.map((variant, index) => (
-            <Button
-              key={index}
-              type="button"
-              variant={selectedIndex === index ? 'default' : 'outline'}
-              onClick={() => handleSelect(index)}
-              className="min-w-[100px]"
-            >
-              {variant.weight}g
-            </Button>
+            <div key={index} className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value={index.toString()} id={`weight-${index}`} />
+              <Label htmlFor={`weight-${index}`} className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{variant.weight}g</p>
+                    <p className="text-sm text-muted-foreground">{variant.description}</p>
+                  </div>
+                  <div className="text-right">
+                    {variant.price.salePrice ? (
+                      <>
+                        <p className="font-semibold text-primary">₹{variant.price.salePrice.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground line-through">₹{variant.price.listPrice.toFixed(2)}</p>
+                      </>
+                    ) : (
+                      <p className="font-semibold">₹{variant.price.listPrice.toFixed(2)}</p>
+                    )}
+                  </div>
+                </div>
+              </Label>
+            </div>
           ))}
-        </div>
-        {weightVariants[selectedIndex] && (
-          <p className="text-sm text-muted-foreground">
-            {weightVariants[selectedIndex].description}
-          </p>
-        )}
+        </RadioGroup>
       </div>
     );
   }
 
   if (variants.__kind__ === 'flavor') {
     const flavorVariants = variants.flavor;
-    
-    const handleSelect = (index: number) => {
+
+    const handleChange = (index: number) => {
       setSelectedIndex(index);
       const variant = flavorVariants[index];
-      onVariantChange(variant.price, variant.flavor);
+      onVariantChange(variant.price, variant.flavor, undefined, variant);
     };
 
-    // Initialize with first variant
+    // Auto-select first variant on mount
     if (selectedIndex === 0 && flavorVariants.length > 0) {
-      setTimeout(() => onVariantChange(flavorVariants[0].price, flavorVariants[0].flavor), 0);
+      setTimeout(() => handleChange(0), 0);
     }
 
     return (
       <div className="space-y-3">
-        <Label className="text-base font-semibold">Select Variant</Label>
-        <div className="flex flex-col gap-2">
+        <Label className="text-base font-semibold">Select Flavor</Label>
+        <RadioGroup
+          value={selectedIndex.toString()}
+          onValueChange={(value) => handleChange(parseInt(value))}
+        >
           {flavorVariants.map((variant, index) => (
-            <Button
-              key={index}
-              type="button"
-              variant={selectedIndex === index ? 'default' : 'outline'}
-              onClick={() => handleSelect(index)}
-              className="justify-start text-left h-auto py-3"
-            >
-              <div>
-                <div className="font-semibold">{variant.flavor}</div>
-                <div className="text-xs opacity-80">{variant.weight}g - {variant.description}</div>
-              </div>
-            </Button>
+            <div key={index} className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value={index.toString()} id={`flavor-${index}`} />
+              <Label htmlFor={`flavor-${index}`} className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{variant.flavor}</p>
+                    <p className="text-sm text-muted-foreground">{variant.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{variant.weight}g</p>
+                  </div>
+                  <div className="text-right">
+                    {variant.price.salePrice ? (
+                      <>
+                        <p className="font-semibold text-primary">₹{variant.price.salePrice.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground line-through">₹{variant.price.listPrice.toFixed(2)}</p>
+                      </>
+                    ) : (
+                      <p className="font-semibold">₹{variant.price.listPrice.toFixed(2)}</p>
+                    )}
+                  </div>
+                </div>
+              </Label>
+            </div>
           ))}
-        </div>
+        </RadioGroup>
       </div>
     );
   }

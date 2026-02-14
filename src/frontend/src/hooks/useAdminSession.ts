@@ -17,6 +17,11 @@ export function useAdminSession() {
       if (!actor || !sessionId) {
         setIsValid(false);
         setIsValidating(false);
+        if (sessionId) {
+          // Clear invalid session from storage
+          localStorage.removeItem(ADMIN_SESSION_KEY);
+          setSessionId(null);
+        }
         return;
       }
 
