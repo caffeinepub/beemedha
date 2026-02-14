@@ -23,6 +23,16 @@ export interface ContactFormSubmission {
   'message' : string,
   'timestamp' : Time,
 }
+export interface CreateProductPayload {
+  'name' : string,
+  'description' : string,
+  'variants' : [] | [ProductVariants],
+  'availability' : AvailabilityStatus,
+  'stock' : bigint,
+  'category' : Category,
+  'image' : string,
+  'price' : Price,
+}
 export type CustomerIdentifier = { 'email' : string } |
   { 'phone' : string };
 export interface DeliveryAddress {
@@ -90,9 +100,7 @@ export type ProductUpdateType = { 'seasonalAvailability' : null } |
   { 'limitedTimeOffer' : null };
 export type ProductVariants = { 'weight' : Array<WeightVariant> } |
   { 'flavor' : Array<FlavorVariant> };
-export type SeedProductsResult = { 'seeded' : { 'count' : bigint } } |
-  { 'alreadySeeded' : null };
-export interface SiteSettings {
+export interface StoreSettings {
   'certificationsContent' : string,
   'backgroundImage' : [] | [string],
   'mapUrl' : string,
@@ -101,6 +109,17 @@ export interface SiteSettings {
   'contactDetails' : string,
 }
 export type Time = bigint;
+export interface UpdateProductPayload {
+  'id' : bigint,
+  'name' : string,
+  'description' : string,
+  'variants' : [] | [ProductVariants],
+  'availability' : AvailabilityStatus,
+  'stock' : bigint,
+  'category' : Category,
+  'image' : string,
+  'price' : Price,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -138,89 +157,64 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addAdmin' : ActorMethod<[Principal], undefined>,
-  'adminLogin' : ActorMethod<[string, string], [] | [string]>,
-  'adminLogout' : ActorMethod<[string], undefined>,
+  'adminLogin' : ActorMethod<
+    [string, string],
+    { 'error' : string } |
+      { 'success' : string }
+  >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createOrder' : ActorMethod<
     [string, Array<OrderItem>, number, DeliveryAddress],
-    bigint
+    { 'success' : bigint }
   >,
   'createProduct' : ActorMethod<
-    [
-      string,
-      string,
-      string,
-      Category,
-      Price,
-      string,
-      AvailabilityStatus,
-      [] | [ProductVariants],
-      bigint,
-    ],
-    bigint
+    [CreateProductPayload],
+    { 'error' : string } |
+      { 'success' : Product }
   >,
   'createProductUpdate' : ActorMethod<
-    [string, ProductUpdateType, bigint, string],
+    [ProductUpdateType, bigint, string],
     bigint
   >,
-  'customerLogin' : ActorMethod<[CustomerIdentifier], [] | [string]>,
-  'customerLogout' : ActorMethod<[string], undefined>,
-  'deleteProduct' : ActorMethod<[string, bigint], undefined>,
-  'deleteProductUpdate' : ActorMethod<[string, bigint], undefined>,
-  'getAllOrders' : ActorMethod<[string], Array<OrderType>>,
+  'deleteCustomerAddress' : ActorMethod<[string, bigint], undefined>,
+  'deleteProduct' : ActorMethod<
+    [bigint],
+    { 'error' : string } |
+      { 'success' : null }
+  >,
+  'getAllContactSubmissions' : ActorMethod<[], Array<ContactFormSubmission>>,
+  'getAllOrders' : ActorMethod<[], Array<OrderType>>,
   'getAllProductUpdates' : ActorMethod<[], Array<ProductUpdate>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
-  'getAllProductsAdmin' : ActorMethod<[string], Array<Product>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getContactFormSubmissions' : ActorMethod<
-    [string],
-    Array<ContactFormSubmission>
-  >,
+  'getCustomerAddresses' : ActorMethod<[string], Array<DeliveryAddress>>,
   'getCustomerOrders' : ActorMethod<[string], Array<OrderType>>,
-  'getCustomerSessionInfo' : ActorMethod<[string], [] | [CustomerIdentifier]>,
-  'getDeliveryAddress' : ActorMethod<[string], [] | [DeliveryAddress]>,
-  'getLimitedProducts' : ActorMethod<[], Array<Product>>,
   'getLogo' : ActorMethod<[], [] | [Logo]>,
-  'getOrder' : ActorMethod<[string, bigint], [] | [OrderType]>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
-  'getProductAdmin' : ActorMethod<[string, bigint], [] | [Product]>,
   'getProductUpdatesByProduct' : ActorMethod<[bigint], Array<ProductUpdate>>,
   'getProductUpdatesByType' : ActorMethod<
     [ProductUpdateType],
     Array<ProductUpdate>
   >,
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
-  'getSiteSettings' : ActorMethod<[], SiteSettings>,
+  'getStoreSettings' : ActorMethod<[], StoreSettings>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isAdminSessionValid' : ActorMethod<[string], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'promoteToUser' : ActorMethod<[Principal], undefined>,
-  'removeAdmin' : ActorMethod<[Principal], undefined>,
+  'isCustomerSessionValid' : ActorMethod<[string], boolean>,
+  'loginCustomerByEmail' : ActorMethod<[string], string>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'saveDeliveryAddress' : ActorMethod<[string, DeliveryAddress], undefined>,
-  'seedProducts' : ActorMethod<[string], SeedProductsResult>,
+  'saveCustomerAddress' : ActorMethod<[string, DeliveryAddress], undefined>,
+  'setLogo' : ActorMethod<[Logo], undefined>,
   'submitContactForm' : ActorMethod<[string, string, string], bigint>,
-  'updateLogo' : ActorMethod<[string, string, Uint8Array], undefined>,
-  'updateOrderStatus' : ActorMethod<[string, bigint, OrderStatus], undefined>,
+  'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
   'updateProduct' : ActorMethod<
-    [
-      string,
-      bigint,
-      string,
-      string,
-      Category,
-      Price,
-      string,
-      AvailabilityStatus,
-      [] | [ProductVariants],
-      bigint,
-    ],
-    undefined
+    [UpdateProductPayload],
+    { 'error' : string } |
+      { 'success' : Product }
   >,
-  'updateSiteSettings' : ActorMethod<[string, SiteSettings], undefined>,
-  'validateAdminSession' : ActorMethod<[string], boolean>,
-  'validateCustomerSession' : ActorMethod<[string], boolean>,
+  'updateStoreSettings' : ActorMethod<[StoreSettings], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

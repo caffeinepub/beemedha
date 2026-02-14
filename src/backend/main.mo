@@ -1,29 +1,45 @@
-import Array "mo:core/Array";
-import Map "mo:core/Map";
-import Iter "mo:core/Iter";
-import Time "mo:core/Time";
-import Principal "mo:core/Principal";
-import Int "mo:core/Int";
-import Order "mo:core/Order";
-import Text "mo:core/Text";
-import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
-import Storage "blob-storage/Storage";
+import Nat "mo:core/Nat";
+import Iter "mo:core/Iter";
+
+import Map "mo:core/Map";
+import Blob "mo:core/Blob";
+import Array "mo:core/Array";
+import Int "mo:core/Int";
+import Time "mo:core/Time";
+import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
-import Char "mo:core/Char";
-import Nat32 "mo:core/Nat32";
-import Nat8 "mo:core/Nat8";
-import Blob "mo:core/Blob";
-import Random "mo:core/Random";
-import Option "mo:core/Option";
+import Principal "mo:core/Principal";
+
+// specify the data migration function in with-clause
 
 actor {
+  // Product types
   type Category = {
     #beeProducts;
     #naturalHoney;
     #rawHoney;
+  };
+
+  type ProductVariants = {
+    #weight : [WeightVariant];
+    #flavor : [FlavorVariant];
+  };
+
+  type WeightVariant = {
+    weight : Nat;
+    description : Text;
+    price : Price;
+  };
+
+  type FlavorVariant = {
+    flavor : Text;
+    description : Text;
+    price : Price;
+    weight : Nat;
   };
 
   type AvailabilityStatus = {
@@ -37,13 +53,7 @@ actor {
     salePrice : ?Float;
   };
 
-  module Product {
-    public func compareByCreated(a : Product, b : Product) : Order.Order {
-      Int.compare(b.timestamp, a.timestamp);
-    };
-  };
-
-  public type Product = {
+  type Product = {
     id : Nat;
     name : Text;
     description : Text;
@@ -58,25 +68,8 @@ actor {
     isDeleted : Bool;
   };
 
-  public type ProductVariants = {
-    #weight : [WeightVariant];
-    #flavor : [FlavorVariant];
-  };
-
-  public type WeightVariant = {
-    weight : Nat;
-    description : Text;
-    price : Price;
-  };
-
-  public type FlavorVariant = {
-    flavor : Text;
-    description : Text;
-    price : Price;
-    weight : Nat;
-  };
-
-  public type ProductUpdate = {
+  // Product updates
+  type ProductUpdate = {
     id : Nat;
     productUpdateType : ProductUpdateType;
     productId : Nat;
@@ -84,14 +77,14 @@ actor {
     timestamp : Time.Time;
   };
 
-  public type ProductUpdateType = {
+  type ProductUpdateType = {
     #newHarvest;
     #seasonalAvailability;
     #priceUpdate;
     #limitedTimeOffer;
   };
 
-  public type ContactFormSubmission = {
+  type ContactFormSubmission = {
     id : Nat;
     name : Text;
     email : Text;
@@ -99,38 +92,50 @@ actor {
     timestamp : Time.Time;
   };
 
+  type StoreSettings = {
+    backgroundImage : ?Text;
+    mapUrl : Text;
+    contactDetails : Text;
+    certificationsContent : Text;
+    certificationsImage : ?Text;
+    aboutContent : Text;
+  };
+
   public type UserProfile = {
     name : Text;
   };
 
-  public type Logo = {
+  // Logo
+  type Logo = {
     mimeType : Text;
     data : [Nat8];
   };
 
-  public type AdminCredentials = {
+  // Admin management types
+  type AdminCredentials = {
     username : Text;
     email : Text;
     passwordHash : Text;
   };
 
-  public type AdminSession = {
+  type AdminSession = {
     sessionId : Text;
     expiresAt : Time.Time;
   };
 
+  // Customer types
   public type CustomerIdentifier = {
     #email : Text;
     #phone : Text;
   };
 
-  public type CustomerSession = {
+  type CustomerSession = {
     sessionId : Text;
     identifier : CustomerIdentifier;
     expiresAt : Time.Time;
   };
 
-  public type DeliveryAddress = {
+  type DeliveryAddress = {
     name : Text;
     addressLine1 : Text;
     addressLine2 : Text;
@@ -166,27 +171,29 @@ actor {
     flavorVariant : ?FlavorVariant;
   };
 
-  public type SiteSettings = {
-    backgroundImage : ?Text;
-    mapUrl : Text;
-    contactDetails : Text;
-    certificationsContent : Text;
-    certificationsImage : ?Text;
-    aboutContent : Text;
-  };
+  type ProductKey = Blob;
+  var productKeyIncrement : Int = 0;
 
   var nextUpdateId = 0;
   var nextContactId = 0;
   var nextOrderId = 0;
-  var products = Map.empty<Nat, Product>();
+  var logo : ?Logo = null;
+  var adminCredentials : ?AdminCredentials = null;
+  let adminSessions = Map.empty<Text, AdminSession>();
+  let customerSessions = Map.empty<Text, CustomerSession>();
+
+  let ADMIN_SESSION_TIMEOUT : Int = 24 * 60 * 60 * 1_000_000_000;
+  let CUSTOMER_SESSION_TIMEOUT : Int = 7 * 24 * 60 * 60 * 1_000_000_000;
+
+  let products = Map.empty<Nat, Product>();
+  let productVariants = Map.empty<Nat, ProductVariants>();
   let updates = Map.empty<Nat, ProductUpdate>();
   let contacts = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
-  let deliveryAddresses = Map.empty<Text, DeliveryAddress>();
   let orders = Map.empty<Nat, OrderType>();
+  let deliveryAddresses = Map.empty<Text, [DeliveryAddress]>();
 
-  var logo : ?Logo = null;
-  var siteSettings : SiteSettings = {
+  var siteSettings : StoreSettings = {
     backgroundImage = null;
     mapUrl = "https://maps.app.goo.gl/J6bsG7n3H4yPBrPK9";
     contactDetails = "";
@@ -195,102 +202,233 @@ actor {
     aboutContent = "";
   };
 
-  var adminCredentials : ?AdminCredentials = null;
-  let adminSessions = Map.empty<Text, AdminSession>();
-
-  let customerSessions = Map.empty<Text, CustomerSession>();
-
-  let ADMIN_SESSION_TIMEOUT : Int = 24 * 60 * 60 * 1_000_000_000;
-  let CUSTOMER_SESSION_TIMEOUT : Int = 7 * 24 * 60 * 60 * 1_000_000_000;
-
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  func initializeAdminCredentials() {
+  // Product helpers
+  module Product {
+    public func compareByCreated(a : Product, b : Product) : Order.Order {
+      Int.compare(b.timestamp, a.timestamp);
+    };
+  };
+
+  module TextComparator {
+    public func compare(a : Blob, b : Blob) : Order.Order {
+      Blob.compare(a, b);
+    };
+  };
+
+  // Admin helpers (from previous implementation)
+  func initializeAdminCredentials() : () {
     if (adminCredentials.isNull()) {
-      let passwordHash = hashPassword("789852qwertyuiop");
+      let passwordHash = "789852qwertyuiop";
       adminCredentials := ?{
         username = "Thejas Kinnigoli";
         email = "thejasumeshpoojary7@gmail.com";
-        passwordHash = passwordHash;
+        passwordHash;
       };
     };
   };
 
-  func hashPassword(password : Text) : Text {
-    var hash : Nat32 = 5381;
-    for (char in password.chars()) {
-      hash := ((hash << 5) +% hash) +% Nat32.fromNat(char.toNat32().toNat());
-    };
-    hash.toText();
+  // Product CRUD
+  public type CreateProductPayload = {
+    name : Text;
+    description : Text;
+    category : Category;
+    price : Price;
+    image : Text;
+    availability : AvailabilityStatus;
+    variants : ?ProductVariants;
+    stock : Nat;
   };
 
-  func generateSessionId() : async Text {
-    let entropy = await Random.blob();
-    let bytes = entropy.toArray();
-    var sessionId = "";
-    for (byte in bytes.vals()) {
-      sessionId #= byte.toText();
-    };
-    sessionId;
+  public type UpdateProductPayload = {
+    id : Nat;
+    name : Text;
+    description : Text;
+    category : Category;
+    price : Price;
+    image : Text;
+    availability : AvailabilityStatus;
+    variants : ?ProductVariants;
+    stock : Nat;
   };
 
-  func isValidAdminSession(sessionId : Text) : Bool {
+  public shared ({ caller }) func createProduct(payload : CreateProductPayload) : async {
+    #success : Product;
+    #error : Text;
+  } {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      return #error("Unauthorized: Only admins can create products");
+    };
+
+    let productId = createProductKey();
+    let now = Time.now();
+    let product : Product = {
+      id = productId;
+      name = payload.name;
+      description = payload.description;
+      category = payload.category;
+      price = payload.price;
+      image = payload.image;
+      availability = payload.availability;
+      created = now;
+      timestamp = now;
+      variants = payload.variants;
+      stock = payload.stock;
+      isDeleted = false;
+    };
+
+    products.add(productId, product);
+    #success(product);
+  };
+
+  public shared ({ caller }) func updateProduct(payload : UpdateProductPayload) : async {
+    #success : Product;
+    #error : Text;
+  } {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      return #error("Unauthorized: Only admins can update products");
+    };
+
+    switch (products.get(payload.id)) {
+      case (null) { #error("Product not found") };
+      case (?existingProduct) {
+        let updatedProduct : Product = {
+          id = existingProduct.id;
+          name = payload.name;
+          description = payload.description;
+          category = payload.category;
+          price = payload.price;
+          image = payload.image;
+          availability = payload.availability;
+          created = existingProduct.created;
+          timestamp = Time.now();
+          variants = payload.variants;
+          stock = payload.stock;
+          isDeleted = existingProduct.isDeleted;
+        };
+        products.add(payload.id, updatedProduct);
+        #success(updatedProduct);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteProduct(productId : Nat) : async { #success : (); #error : Text } {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      return #error("Unauthorized: Only admins can delete products");
+    };
+
+    switch (products.get(productId)) {
+      case (null) { #error("Product not found") };
+      case (?product) {
+        let deletedProduct : Product = {
+          id = product.id;
+          name = product.name;
+          description = product.description;
+          category = product.category;
+          price = product.price;
+          image = product.image;
+          availability = product.availability;
+          created = product.created;
+          timestamp = Time.now();
+          variants = product.variants;
+          stock = product.stock;
+          isDeleted = true;
+        };
+
+        products.add(productId, deletedProduct);
+        #success(());
+      };
+    };
+  };
+
+  public query func getProduct(productId : Nat) : async ?Product {
+    products.get(productId);
+  };
+
+  public query func getAllProducts() : async [Product] {
+    products.values().toArray().filter(func(p) { not p.isDeleted });
+  };
+
+  public query func getProductsByCategory(category : Category) : async [Product] {
+    products.values().toArray().filter(
+      func(product) {
+        product.category == category and not product.isDeleted;
+      }
+    );
+  };
+
+  // Session management
+  func createProductKey() : Nat {
+    productKeyIncrement += 1;
+    productKeyIncrement.toNat();
+  };
+
+  // Administrative authentication methods
+  public shared ({ caller }) func adminLogin(email : Text, password : Text) : async {
+    #success : Text;
+    #error : Text;
+  } {
+    initializeAdminCredentials();
+    switch (adminCredentials) {
+      case (null) { #error("No admin credentials present") };
+      case (?creds) {
+        if (creds.email == email and creds.passwordHash == password) {
+          let sessionId = createSessionId();
+          let expiresAt = Time.now() + ADMIN_SESSION_TIMEOUT;
+          let session : AdminSession = {
+            sessionId;
+            expiresAt;
+          };
+          adminSessions.add(sessionId, session);
+          #success(sessionId);
+        } else {
+          #error("Invalid credentials");
+        };
+      };
+    };
+  };
+
+  public query func isAdminSessionValid(sessionId : Text) : async Bool {
     switch (adminSessions.get(sessionId)) {
       case (null) { false };
       case (?session) {
-        if (Time.now() > session.expiresAt) {
-          adminSessions.remove(sessionId);
-          false;
-        } else {
-          true;
-        };
+        Time.now() < session.expiresAt;
       };
     };
   };
 
-  func isValidCustomerSession(sessionId : Text) : Bool {
+  public func loginCustomerByEmail(email : Text) : async Text {
+    let sessionId = createSessionId();
+    let identifier : CustomerIdentifier = #email(email);
+    let expiresAt = Time.now() + CUSTOMER_SESSION_TIMEOUT;
+    let session : CustomerSession = {
+      sessionId;
+      identifier;
+      expiresAt;
+    };
+    customerSessions.add(sessionId, session);
+    sessionId;
+  };
+
+  public query func isCustomerSessionValid(sessionId : Text) : async Bool {
     switch (customerSessions.get(sessionId)) {
       case (null) { false };
       case (?session) {
-        if (Time.now() > session.expiresAt) {
-          customerSessions.remove(sessionId);
-          false;
-        } else {
-          true;
-        };
+        Time.now() < session.expiresAt;
       };
     };
   };
 
+  // Product helpers
   func getCustomerIdentifierFromSession(sessionId : Text) : ?CustomerIdentifier {
     switch (customerSessions.get(sessionId)) {
       case (null) { null };
       case (?session) {
-        if (Time.now() > session.expiresAt) {
-          null;
-        } else {
+        if (Time.now() < session.expiresAt) {
           ?session.identifier;
-        };
-      };
-    };
-  };
-
-  public shared func adminLogin(username : Text, password : Text) : async ?Text {
-    initializeAdminCredentials();
-
-    switch (adminCredentials) {
-      case (null) { null };
-      case (?creds) {
-        if (creds.username == username and creds.passwordHash == hashPassword(password)) {
-          let sessionId = await generateSessionId();
-          let session : AdminSession = {
-            sessionId = sessionId;
-            expiresAt = Time.now() + ADMIN_SESSION_TIMEOUT;
-          };
-          adminSessions.add(sessionId, session);
-          ?sessionId;
         } else {
           null;
         };
@@ -298,73 +436,17 @@ actor {
     };
   };
 
-  public shared func adminLogout(sessionId : Text) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-    adminSessions.remove(sessionId);
-  };
-
-  public query func validateAdminSession(sessionId : Text) : async Bool {
-    isValidAdminSession(sessionId);
-  };
-
-  public shared func customerLogin(identifier : CustomerIdentifier) : async ?Text {
-    let sessionId = await generateSessionId();
-    let session : CustomerSession = {
-      sessionId = sessionId;
-      identifier = identifier;
-      expiresAt = Time.now() + CUSTOMER_SESSION_TIMEOUT;
-    };
-    customerSessions.add(sessionId, session);
-    ?sessionId;
-  };
-
-  public shared func customerLogout(sessionId : Text) : async () {
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired customer session");
-    };
-    customerSessions.remove(sessionId);
-  };
-
-  public query func validateCustomerSession(sessionId : Text) : async Bool {
-    isValidCustomerSession(sessionId);
-  };
-
-  public query func getCustomerSessionInfo(sessionId : Text) : async ?CustomerIdentifier {
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired customer session");
-    };
-    switch (customerSessions.get(sessionId)) {
-      case (null) { null };
-      case (?session) {
-        if (Time.now() > session.expiresAt) {
-          null;
-        } else {
-          ?session.identifier;
-        };
-      };
+  func getEmailFromIdentifier(identifier : CustomerIdentifier) : Text {
+    switch (identifier) {
+      case (#email(email)) { email };
+      case (#phone(phone)) { phone };
     };
   };
 
-  public shared ({ caller }) func addAdmin(newAdmin : Principal) : async () {
-    AccessControl.assignRole(accessControlState, caller, newAdmin, #admin);
-  };
-
-  public shared ({ caller }) func removeAdmin(adminToRemove : Principal) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-    AccessControl.assignRole(accessControlState, caller, adminToRemove, #user);
-  };
-
-  public shared ({ caller }) func promoteToUser(principal : Principal) : async () {
-    AccessControl.assignRole(accessControlState, caller, principal, #user);
-  };
-
+  // User management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
+      Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.get(caller);
   };
@@ -383,368 +465,140 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  public shared func updateLogo(sessionId : Text, mimeType : Text, data : [Nat8]) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-    if (mimeType == "" or data.size() == 0) {
-      Runtime.trap("Invalid logo data");
-    };
-    logo := ?{ mimeType; data };
-  };
-
-  public query func getLogo() : async ?Logo {
-    logo;
-  };
-
-  public shared func createProduct(
-    sessionId : Text,
-    name : Text,
-    description : Text,
-    category : Category,
-    price : Price,
-    image : Text,
-    availability : AvailabilityStatus,
-    variants : ?ProductVariants,
-    stock : Nat,
-  ) : async Nat {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-
-    let productId = products.size();
-    let timestamp = Time.now();
-    let product = {
-      id = productId;
-      name;
-      description;
-      category;
-      price;
-      image;
-      availability;
-      created = timestamp;
-      timestamp;
-      variants;
-      stock;
-      isDeleted = false;
-    };
-
-    products.add(productId, product);
-    productId;
-  };
-
-  public shared func updateProduct(
-    sessionId : Text,
-    id : Nat,
-    name : Text,
-    description : Text,
-    category : Category,
-    price : Price,
-    image : Text,
-    availability : AvailabilityStatus,
-    variants : ?ProductVariants,
-    stock : Nat,
-  ) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-
-    let product = switch (products.get(id)) {
-      case (null) { Runtime.trap("Product not found") };
-      case (?p) { p };
-    };
-
-    let updatedProduct = {
-      id;
-      name;
-      description;
-      category;
-      price;
-      image;
-      availability;
-      created = product.created;
-      timestamp = Time.now();
-      variants;
-      stock;
-      isDeleted = false;
-    };
-
-    products.add(id, updatedProduct);
-  };
-
-  public shared func deleteProduct(sessionId : Text, id : Nat) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-
-    let product = switch (products.get(id)) {
-      case (null) { Runtime.trap("Product not found") };
-      case (?p) { p };
-    };
-
-    if (product.isDeleted) {
-      Runtime.trap("Product already deleted");
-    };
-
-    let updatedProduct = { product with isDeleted = true };
-    products.add(id, updatedProduct);
-  };
-
-  public shared func createProductUpdate(
-    sessionId : Text,
-    productUpdateType : ProductUpdateType,
-    productId : Nat,
-    message : Text,
-  ) : async Nat {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-
-    let updateId = nextUpdateId;
-    nextUpdateId += 1;
-    let update = {
-      id = updateId;
-      productUpdateType;
-      productId;
-      message;
-      timestamp = Time.now();
-    };
-    updates.add(updateId, update);
-
-    updateId;
-  };
-
-  public shared func deleteProductUpdate(sessionId : Text, id : Nat) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-
-    switch (updates.get(id)) {
-      case (null) { Runtime.trap("Product update not found") };
-      case (?_) { updates.remove(id) };
-    };
-  };
-
-  public shared func getContactFormSubmissions(sessionId : Text) : async [ContactFormSubmission] {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-    contacts.values().toArray();
-  };
-
-  public shared func seedProducts(sessionId : Text) : async SeedProductsResult {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-    seedProductsInternal();
-  };
-
-  public shared func updateSiteSettings(sessionId : Text, newSettings : SiteSettings) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-    siteSettings := newSettings;
-  };
-
-  public query func getSiteSettings() : async SiteSettings {
-    siteSettings;
-  };
-
-  public shared func saveDeliveryAddress(sessionId : Text, address : DeliveryAddress) : async () {
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired customer session");
-    };
-    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
-      case (null) { Runtime.trap("Unauthorized: Invalid session") };
-      case (?id) { id };
-    };
-    let key = customerIdentifierToText(identifier);
-    deliveryAddresses.add(key, address);
-  };
-
-  public query func getDeliveryAddress(sessionId : Text) : async ?DeliveryAddress {
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired customer session");
-    };
-    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
-      case (null) { Runtime.trap("Unauthorized: Invalid session") };
-      case (?id) { id };
-    };
-    let key = customerIdentifierToText(identifier);
-    deliveryAddresses.get(key);
-  };
-
-  func customerIdentifierToText(identifier : CustomerIdentifier) : Text {
-    switch (identifier) {
-      case (#email(email)) { "email:" # email };
-      case (#phone(phone)) { "phone:" # phone };
-    };
-  };
-
-  public shared func createOrder(
-    sessionId : Text,
-    items : [OrderItem],
-    totalPrice : Float,
-    address : DeliveryAddress,
-  ) : async Nat {
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired customer session");
-    };
-
-    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
-      case (null) { Runtime.trap("Unauthorized: Invalid session") };
-      case (?id) { id };
-    };
-
-    if (items.size() == 0) {
-      Runtime.trap("Order must contain at least one item");
-    };
-
-    let orderId = nextOrderId;
-    nextOrderId += 1;
-
-    let now = Time.now();
-    let order : OrderType = {
-      id = orderId;
-      customerIdentifier = identifier;
-      items = items;
-      totalPrice = totalPrice;
-      status = #pending;
-      address = address;
-      createdAt = now;
-      updatedAt = now;
-    };
-
-    orders.add(orderId, order);
-    orderId;
-  };
-
-  public query func getOrder(sessionId : Text, orderId : Nat) : async ?OrderType {
-    if (isValidAdminSession(sessionId)) {
-      return orders.get(orderId);
-    };
-
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired session");
-    };
-
-    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
-      case (null) { Runtime.trap("Unauthorized: Invalid session") };
-      case (?id) { id };
-    };
-
-    switch (orders.get(orderId)) {
-      case (null) { null };
-      case (?order) {
-        if (customerIdentifierToText(order.customerIdentifier) == customerIdentifierToText(identifier)) {
-          ?order;
-        } else {
-          Runtime.trap("Unauthorized: Can only view your own orders");
+  // Orders
+  public shared ({ caller }) func createOrder(sessionId : Text, items : [OrderItem], totalPrice : Float, address : DeliveryAddress) : async {
+    #success : Nat;
+  } {
+    switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) {
+        Runtime.trap("Unauthorized: Invalid or expired session");
+      };
+      case (?identifier) {
+        let orderId = createProductKey();
+        let order : OrderType = {
+          id = orderId;
+          customerIdentifier = identifier;
+          items;
+          totalPrice;
+          status = #pending;
+          address;
+          createdAt = Time.now();
+          updatedAt = Time.now();
         };
+        orders.add(orderId, order);
+        #success(orderId);
       };
     };
   };
 
-  public query func getCustomerOrders(sessionId : Text) : async [OrderType] {
-    if (not isValidCustomerSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired customer session");
+  public query ({ caller }) func getCustomerOrders(sessionId : Text) : async [OrderType] {
+    switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) {
+        Runtime.trap("Unauthorized: Invalid or expired session");
+      };
+      case (?identifier) {
+        orders.values().toArray().filter(
+          func(order) {
+            getEmailFromIdentifier(order.customerIdentifier) == getEmailFromIdentifier(identifier);
+          }
+        );
+      };
     };
-
-    let identifier = switch (getCustomerIdentifierFromSession(sessionId)) {
-      case (null) { Runtime.trap("Unauthorized: Invalid session") };
-      case (?id) { id };
-    };
-
-    let customerKey = customerIdentifierToText(identifier);
-    orders.values().toArray().filter(
-      func(order : OrderType) : Bool {
-        customerIdentifierToText(order.customerIdentifier) == customerKey;
-      }
-    );
   };
 
-  public query func getAllOrders(sessionId : Text) : async [OrderType] {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
+  public query ({ caller }) func getAllOrders() : async [OrderType] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view all orders");
     };
     orders.values().toArray();
   };
 
-  public shared func updateOrderStatus(sessionId : Text, orderId : Nat, newStatus : OrderStatus) : async () {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
+  public shared ({ caller }) func updateOrderStatus(orderId : Nat, status : OrderStatus) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update order status");
     };
-
-    let order = switch (orders.get(orderId)) {
-      case (null) { Runtime.trap("Order not found") };
-      case (?o) { o };
+    switch (orders.get(orderId)) {
+      case (null) {
+        Runtime.trap("Order not found");
+      };
+      case (?order) {
+        let updatedOrder = {
+          id = order.id;
+          customerIdentifier = order.customerIdentifier;
+          items = order.items;
+          totalPrice = order.totalPrice;
+          status;
+          address = order.address;
+          createdAt = order.createdAt;
+          updatedAt = Time.now();
+        };
+        orders.add(orderId, updatedOrder);
+      };
     };
-
-    let updatedOrder : OrderType = {
-      id = order.id;
-      customerIdentifier = order.customerIdentifier;
-      items = order.items;
-      totalPrice = order.totalPrice;
-      status = newStatus;
-      address = order.address;
-      createdAt = order.createdAt;
-      updatedAt = Time.now();
-    };
-
-    orders.add(orderId, updatedOrder);
   };
 
-  func filterDeletedProducts(isAdmin : Bool, product : Product) : Bool {
-    isAdmin or not product.isDeleted;
-  };
-
-  public shared func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
-    if (name == "" or email == "" or message == "") {
-      Runtime.trap("All fields are required");
-    };
-
-    let contactId = nextContactId;
-    nextContactId += 1;
-    let submission = {
-      id = contactId;
-      name;
-      email;
-      message;
-      timestamp = Time.now();
-    };
-    contacts.add(contactId, submission);
-    contactId;
-  };
-
-  public query func getProduct(id : Nat) : async ?Product {
-    switch (products.get(id)) {
-      case (null) { null };
-      case (?product) {
-        if (not product.isDeleted) {
-          ?product;
-        } else {
-          null;
+  // Customer addresses
+  public query func getCustomerAddresses(sessionId : Text) : async [DeliveryAddress] {
+    switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) {
+        Runtime.trap("Unauthorized: Invalid or expired session");
+      };
+      case (?identifier) {
+        let email = getEmailFromIdentifier(identifier);
+        switch (deliveryAddresses.get(email)) {
+          case (null) { [] };
+          case (?addresses) { addresses };
         };
       };
     };
   };
 
-  public query func getAllProducts() : async [Product] {
-    products.values().toArray().filter(
-      func(product) {
-        not product.isDeleted;
-      }
-    );
+  public shared ({ caller }) func saveCustomerAddress(sessionId : Text, address : DeliveryAddress) : async () {
+    switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) {
+        Runtime.trap("Unauthorized: Invalid or expired session");
+      };
+      case (?identifier) {
+        let email = getEmailFromIdentifier(identifier);
+        let addresses = switch (deliveryAddresses.get(email)) {
+          case (null) { [] };
+          case (?existing) { existing };
+        };
+        deliveryAddresses.add(email, addresses.concat([address]));
+      };
+    };
   };
 
-  public query func getProductsByCategory(category : Category) : async [Product] {
-    products.values().toArray().filter(
-      func(product) {
-        product.category == category and not product.isDeleted;
-      }
-    );
+  public shared ({ caller }) func deleteCustomerAddress(sessionId : Text, addressIndex : Nat) : async () {
+    switch (getCustomerIdentifierFromSession(sessionId)) {
+      case (null) {
+        Runtime.trap("Unauthorized: Invalid or expired session");
+      };
+      case (?identifier) {
+        let email = getEmailFromIdentifier(identifier);
+        let addresses = switch (deliveryAddresses.get(email)) {
+          case (null) { [] };
+          case (?existing) { existing };
+        };
+        if (addressIndex >= addresses.size()) {
+          Runtime.trap("Invalid address index");
+        };
+        let newAddresses = Array.tabulate(
+          addresses.size() - 1,
+          func(i) {
+            if (i < addressIndex) {
+              addresses[i];
+            } else {
+              addresses[i + 1];
+            };
+          },
+        );
+        deliveryAddresses.add(email, newAddresses);
+      };
+    };
   };
 
+  // Product updates
   public query func getAllProductUpdates() : async [ProductUpdate] {
     updates.values().toArray();
   };
@@ -765,144 +619,73 @@ actor {
     );
   };
 
-  public query func getLimitedProducts() : async [Product] {
-    products.values().toArray().filter(
-      func(product) {
-        product.availability == #limited and not product.isDeleted;
-      }
-    );
+  public shared ({ caller }) func createProductUpdate(
+    productUpdateType : ProductUpdateType,
+    productId : Nat,
+    message : Text,
+  ) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can create product updates");
+    };
+    let updateId = createProductKey();
+    let update : ProductUpdate = {
+      id = updateId;
+      productUpdateType;
+      productId;
+      message;
+      timestamp = Time.now();
+    };
+    updates.add(updateId, update);
+    updateId;
   };
 
-  public query func getProductAdmin(sessionId : Text, id : Nat) : async ?Product {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
-    };
-    products.get(id);
+  // Store settings
+  public query func getStoreSettings() : async StoreSettings {
+    siteSettings;
   };
 
-  public query func getAllProductsAdmin(sessionId : Text) : async [Product] {
-    if (not isValidAdminSession(sessionId)) {
-      Runtime.trap("Unauthorized: Invalid or expired admin session");
+  public shared ({ caller }) func updateStoreSettings(settings : StoreSettings) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update store settings");
     };
-    products.values().toArray();
+    siteSettings := settings;
   };
 
-  func seedProductsInternal() : SeedProductsResult {
-    if (products.size() > 0) { return #alreadySeeded };
-
-    let now = Time.now();
-
-    let lipBalm : Product = {
-      id = 0;
-      name = "Lip Balm";
-      description = "Natural beeswax lip balm made from pure bee products. Moisturizes and protects your lips with a hint of honey flavor.";
-      category = #beeProducts;
-      price = { listPrice = 50.0; salePrice = null };
-      image = "/assets/images/products/lip-balm-1.webp";
-      availability = #inStock;
-      created = now;
-      timestamp = now;
-      variants = null;
-      stock = 100;
-      isDeleted = false;
-    };
-
-    let beeswax : Product = {
-      id = 1;
-      name = "Beeswax";
-      description = "Pure, natural beeswax - perfect for crafting, cosmetics, and homemade candles. Sustainably sourced and lightly filtered for quality.";
-      category = #beeProducts;
-      price = { listPrice = 50.0; salePrice = null };
-      image = "/assets/images/products/beeswax.webp";
-      availability = #inStock;
-      created = now;
-      timestamp = now;
-      variants = null;
-      stock = 100;
-      isDeleted = false;
-    };
-
-    let naturalHoneyVariants : [WeightVariant] = [
-      {
-        weight = 250;
-        description = "250g jar of pure, natural honey - unprocessed and packed with flavor.";
-        price = { listPrice = 100.0; salePrice = ?80.0 };
-      },
-      {
-        weight = 500;
-        description = "500g jar of pure, natural honey - perfect for everyday use.";
-        price = { listPrice = 200.0; salePrice = ?150.0 };
-      },
-      {
-        weight = 1000;
-        description = "1kg jar of pure, natural honey - great value for honey lovers.";
-        price = { listPrice = 350.0; salePrice = ?275.0 };
-      }
-    ];
-
-    let naturalHoney : Product = {
-      id = 2;
-      name = "Natural Honey";
-      description = "Pure, unprocessed honey sourced directly from local beekeepers. Carefully harvested to maintain natural flavors and health benefits.";
-      category = #naturalHoney;
-      price = { listPrice = 100.0; salePrice = ?80.0 };
-      image = "/assets/images/products/natural-honey-1.webp";
-      availability = #inStock;
-      created = now;
-      timestamp = now;
-      variants = ?#weight(naturalHoneyVariants);
-      stock = 100;
-      isDeleted = false;
-    };
-
-    let rawHoneyVariants : [FlavorVariant] = [
-      {
-        flavor = "Raw Forest";
-        description = "1kg jar of raw forest honey - bold and complex flavors from wild forest blossoms.";
-        price = { listPrice = 350.0; salePrice = ?275.0 };
-        weight = 1000;
-      },
-      {
-        flavor = "Organic Wild";
-        description = "1kg jar of organic wild honey - captures the essence of summer flowers.";
-        price = { listPrice = 350.0; salePrice = ?275.0 };
-        weight = 1000;
-      },
-      {
-        flavor = "Herbal Infused";
-        description = "1kg jar of herbal infused honey - a unique blend of raw honey and natural herbs.";
-        price = { listPrice = 350.0; salePrice = ?275.0 };
-        weight = 1000;
-      }
-    ];
-
-    let rawHoney : Product = {
-      id = 3;
-      name = "Raw Honey";
-      description = "Unfiltered, unprocessed honey with naturally occurring flavors. Direct from the hive to your table.";
-      category = #rawHoney;
-      price = { listPrice = 350.0; salePrice = ?275.0 };
-      image = "/assets/images/products/raw-honey-1.webp";
-      availability = #inStock;
-      created = now;
-      timestamp = now;
-      variants = ?#flavor(rawHoneyVariants);
-      stock = 100;
-      isDeleted = false;
-    };
-
-    products.add(0, lipBalm);
-    products.add(1, beeswax);
-    products.add(2, naturalHoney);
-    products.add(3, rawHoney);
-
-    #seeded { count = 4 };
+  // Logo management
+  public query func getLogo() : async ?Logo {
+    logo;
   };
 
-  public type SeedProductsResult = {
-    #seeded : { count : Nat };
-    #alreadySeeded;
+  public shared ({ caller }) func setLogo(newLogo : Logo) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can set logo");
+    };
+    logo := ?newLogo;
   };
 
-  initializeAdminCredentials();
+  // Contact form
+  public shared ({ caller }) func submitContactForm(name : Text, email : Text, message : Text) : async Nat {
+    let contactId = createProductKey();
+    let submission : ContactFormSubmission = {
+      id = contactId;
+      name;
+      email;
+      message;
+      timestamp = Time.now();
+    };
+    contacts.add(contactId, submission);
+    contactId;
+  };
+
+  public query ({ caller }) func getAllContactSubmissions() : async [ContactFormSubmission] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view contact submissions");
+    };
+    contacts.values().toArray();
+  };
+
+  // Session id
+  func createSessionId() : Text {
+    Int.abs(Time.now()).toNat().toText();
+  };
 };

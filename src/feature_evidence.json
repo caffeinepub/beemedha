@@ -2,12 +2,35 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-internet-identity-passkey-authentication-requirements-and-ui-from-the-admin-area-so-admin-access-is-granted-only-via-the-username-password-admin-session-flow",
-      "featureTitle": "Remove Internet Identity (passkey) authentication requirements and UI from the admin area so admin access is granted only via the username/password admin session flow.",
+      "featureId": "feature-apply-a-global-animated-neon-glow-background-effect-across-the-entire-website-all-routes-not-just-within-specific-panels-while-keeping-all-ui-content-interactive-no-blocking-pointer-events-and-ensuring-legible-contrast-for-text-icons",
+      "featureTitle": "Apply a global animated neon/glow background effect across the entire website (all routes), not just within specific panels, while keeping all UI content interactive (no blocking pointer events) and ensuring legible contrast for text/icons.",
       "files": [
+        "frontend/index.css",
         "frontend/src/App.tsx",
-        "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
-        "frontend/src/pages/admin/AdminAccessPage.tsx"
+        "frontend/src/components/brand/GlobalNeonBackground.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-visible-functional-close-x-button-to-the-sidebar-drawer-ui-so-users-can-close-it-reliably-clicking-the-x-must-close-the-sidebar-and-trigger-a-slide-out-close-animation-in-the-same-direction-the-sidebar-opens-e-g-left-sidebar-slides-out-left-right-sidebar-slides-out-right",
+      "featureTitle": "Add a visible, functional close (X) button to the sidebar drawer UI so users can close it reliably; clicking the X must close the sidebar and trigger a slide-out close animation in the same direction the sidebar opens (e.g., left sidebar slides out left; right sidebar slides out right).",
+      "files": [
+        "frontend/src/components/admin/dashboard/AdminShell.tsx",
+        "frontend/src/components/cart/CartSheet.tsx",
+        "frontend/src/components/common/DrawerCloseButton.tsx",
+        "frontend/src/components/layout/Header.tsx"
       ],
       "components": [
         "authorization@4.0.0",

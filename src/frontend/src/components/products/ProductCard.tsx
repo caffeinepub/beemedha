@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Product, AvailabilityStatus } from '../../backend';
@@ -26,6 +26,8 @@ function getCategoryImage(category: string): string {
 }
 
 export default function ProductCard({ product }: { product: Product }) {
+  const navigate = useNavigate();
+  
   const imageUrl = product.image 
     ? normalizeAssetUrl(product.image) 
     : getCategoryImage(product.category);
@@ -37,12 +39,12 @@ export default function ProductCard({ product }: { product: Product }) {
         : product.variants.flavor[0]?.price) || product.price
     : product.price;
 
+  const handleClick = () => {
+    navigate({ to: '/products/$productId', params: { productId: product.id.toString() } });
+  };
+
   return (
-    <Link
-      to="/products/$productId"
-      params={{ productId: product.id.toString() }}
-      className="group"
-    >
+    <div className="group cursor-pointer" onClick={handleClick}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full">
         <div className="aspect-square overflow-hidden bg-muted">
           <img
@@ -73,6 +75,6 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 }

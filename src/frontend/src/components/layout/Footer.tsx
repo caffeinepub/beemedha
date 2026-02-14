@@ -5,10 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useStoreSettings } from '../../hooks/useStoreSettings';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { settings } = useStoreSettings();
+
+  // Parse contact details and social links
+  let contactDetails = { phone: '', email: '', whatsapp: '', address: '' };
+  let socialLinks = { facebook: '', instagram: '', twitter: '' };
+
+  try {
+    if (settings?.contactDetails) {
+      contactDetails = JSON.parse(settings.contactDetails);
+    }
+    if (settings?.aboutContent) {
+      const parsed = JSON.parse(settings.aboutContent);
+      if (parsed.social) {
+        socialLinks = parsed.social;
+      }
+    }
+  } catch (e) {
+    // Use defaults if parsing fails
+  }
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,33 +69,71 @@ export default function Footer() {
               Pure honey, straight from nature. Committed to quality, purity, and sustainable beekeeping.
             </p>
             <div className="flex space-x-4">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Facebook"
-              >
-                <SiFacebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Instagram"
-              >
-                <SiInstagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="X (Twitter)"
-              >
-                <SiX className="h-5 w-5" />
-              </a>
+              {socialLinks.facebook && (
+                <a
+                  href={socialLinks.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Facebook"
+                >
+                  <SiFacebook className="h-5 w-5" />
+                </a>
+              )}
+              {socialLinks.instagram && (
+                <a
+                  href={socialLinks.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Instagram"
+                >
+                  <SiInstagram className="h-5 w-5" />
+                </a>
+              )}
+              {socialLinks.twitter && (
+                <a
+                  href={socialLinks.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="X (Twitter)"
+                >
+                  <SiX className="h-5 w-5" />
+                </a>
+              )}
+              {/* Fallback to defaults if no settings */}
+              {!socialLinks.facebook && !socialLinks.instagram && !socialLinks.twitter && (
+                <>
+                  <a
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    aria-label="Facebook"
+                  >
+                    <SiFacebook className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    aria-label="Instagram"
+                  >
+                    <SiInstagram className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="https://twitter.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    aria-label="X (Twitter)"
+                  >
+                    <SiX className="h-5 w-5" />
+                  </a>
+                </>
+              )}
             </div>
           </div>
 
@@ -84,8 +142,8 @@ export default function Footer() {
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                  About Us
+                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
+                  Home
                 </Link>
               </li>
               <li>
@@ -94,13 +152,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/certifications" className="text-muted-foreground hover:text-primary transition-colors">
-                  Certifications
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                  Contact Us
+                <Link to="/news" className="text-muted-foreground hover:text-primary transition-colors">
+                  News & Updates
                 </Link>
               </li>
             </ul>

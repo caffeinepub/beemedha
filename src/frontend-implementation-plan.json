@@ -1,32 +1,63 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Disable Internet Identity admin UI and restrict admin access to username/password sessions",
+  "title": "Global neon animated background + reliable sidebar drawer close with slide-out animation",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Remove Internet Identity-based admin gating/UI and ensure admin routes rely only on the existing username/password admin session flow.",
+      "id": "REQ-1",
+      "summary": "Render an animated neon/glow background behind all routes without blocking interactions and with reduced-motion support.",
       "acceptanceCriteria": [
-        "No admin page shows a prompt/button to \"Login with Internet Identity\" or any Internet Identity-based access gating.",
-        "Admin routes under /admin/* are accessible only after successful username/password login (via the existing admin session validation).",
-        "The /admin/access page is not reachable from the UI (remove it from admin navigation) and is not registered as a route, or it is replaced with an English message explaining it is unavailable because Internet Identity is disabled for admin auth.",
-        "All user-facing text related to this change is in English."
+        "All pages (e.g., /, /products, /news, /terms, /admin) display an animated neon/glow background behind the main content.",
+        "The animated background layers do not intercept clicks/scroll/inputs (e.g., links/buttons remain clickable; scrolling works normally).",
+        "Background animation respects `prefers-reduced-motion` by disabling or significantly reducing motion while retaining the neon color scheme (no rapid movement when reduced motion is enabled)."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/brand/GlobalNeonBackground.tsx",
+          "operation": "create",
+          "description": "Create a global, fixed-position neon/glow animated background component (multi-layer gradient/particles/shapes) that sits behind app content with pointer-events disabled and appropriate z-indexing. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/index.css",
+          "operation": "modify",
+          "description": "Add/adjust global CSS utilities to support a full-viewport background layer (e.g., fixed inset container, safe z-index stacking), ensure background layers never capture pointer events, and reuse existing neon animations; confirm `prefers-reduced-motion` also applies to the global background layers."
+        },
+        {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Remove the /admin/access route registration and any related imports/usages (AdminAccessPage, OwnerOnlyRouteGuard) so the Internet Identity admin access UI is no longer reachable and no Internet Identity gating is shown within the admin area."
+          "description": "Wrap the root route layout to include the new GlobalNeonBackground behind all route content (including admin) while keeping the main UI content in a higher stacking context for legible contrast and full interactivity. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add an accessible close (X) control to sidebar drawers so close triggers the existing slide-out animation matching the drawer side.",
+      "acceptanceCriteria": [
+        "When the sidebar drawer is open, an X close button is visible within the sidebar UI and is keyboard accessible.",
+        "Clicking/tapping the X closes the sidebar and a slide-out animation plays (no instant disappearance).",
+        "The sidebar slides out in the same direction as its opening side (left drawers slide out left; right drawers slide out right).",
+        "No console errors occur when opening/closing the sidebar repeatedly."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/common/DrawerCloseButton.tsx",
+          "operation": "create",
+          "description": "Create a reusable, keyboard-accessible close (X) button component (aria-label, focus styles) designed to be placed inside drawer content and invoke an onClose callback without bypassing the drawer’s normal close animation. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/admin/AdminAccessPage.tsx",
-          "operation": "delete",
-          "description": "Delete the Internet Identity-based admin access management page to ensure no admin UI references Internet Identity for authentication/authorization."
+          "path": "frontend/src/components/layout/Header.tsx",
+          "operation": "modify",
+          "description": "In the mobile navigation Sheet (side=\"right\"), render the DrawerCloseButton within the SheetContent/NeonSurface content and wire it to setMobileMenuOpen(false) so the drawer closes via normal state change and plays the right-side slide-out animation. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/admin/OwnerOnlyRouteGuard.tsx",
-          "operation": "delete",
-          "description": "Delete the owner-only guard that prompts \"Login with Internet Identity\" so no admin flows include Internet Identity prompts or access gating."
+          "path": "frontend/src/components/admin/dashboard/AdminShell.tsx",
+          "operation": "modify",
+          "description": "In the admin mobile Sheet (side=\"left\"), render the DrawerCloseButton within the SheetContent/NeonSurface content and wire it to setMobileMenuOpen(false) so the drawer closes with the left-side slide-out animation and remains stable across repeated toggles. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/cart/CartSheet.tsx",
+          "operation": "modify",
+          "description": "Add the DrawerCloseButton to the cart drawer (SheetContent) and wire it to setOpen(false) so users can reliably close the drawer with a visible X while preserving the existing slide-out close animation. Verify the component's usage instructions before implementing."
         }
       ]
     }

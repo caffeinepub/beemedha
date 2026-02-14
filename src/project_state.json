@@ -1,18 +1,27 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project now requires replacing Internet Identity authentication with a custom admin login using username/password credentials for admin access.",
+  "summary": "Website UI enhancements: add a global animated neon/glow background effect and implement a functional sidebar close (X) button with a slide-out close animation.",
   "architectural_notes": [
-    "Admin authentication will switch from Internet Identity (passkey) to a custom username/password login flow."
+    "Add global neon/glow background animation as a site-wide effect (e.g., via CSS/Canvas) with configurable intensity/performance considerations.",
+    "Sidebar close interaction should animate (slide-out) before hiding/unmounting the sidebar. Direction (left vs right) needs confirmation."
   ],
   "known_issues": [
-    "User requested specific hardcoded admin credentials; storing/using plaintext credentials is insecure and should be avoided (use hashed passwords and environment/secret storage)."
+    "Sidebar slide-out direction is ambiguous (user answered 'yes' to left/right); requires clarification to ensure correct behavior."
   ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-remove-internet-identity-passkey-authentication-requirements-and-ui-from-the-admin-area-so-admin-access-is-granted-only-via-the-username-password-admin-session-flow",
-      "title": "Remove Internet Identity (passkey) authentication requirements and UI from the admin area so admin access is granted only via the username/password admin session flow.",
+      "id": "feature-apply-a-global-animated-neon-glow-background-effect-across-the-entire-website-all-routes-not-just-within-specific-panels-while-keeping-all-ui-content-interactive-no-blocking-pointer-events-and-ensuring-legible-contrast-for-text-icons",
+      "title": "Apply a global animated neon/glow background effect across the entire website (all routes), not just within specific panels, while keeping all UI content interactive (no blocking pointer events) and ensuring legible contrast for text/icons.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-visible-functional-close-x-button-to-the-sidebar-drawer-ui-so-users-can-close-it-reliably-clicking-the-x-must-close-the-sidebar-and-trigger-a-slide-out-close-animation-in-the-same-direction-the-sidebar-opens-e-g-left-sidebar-slides-out-left-right-sidebar-slides-out-right",
+      "title": "Add a visible, functional close (X) button to the sidebar drawer UI so users can close it reliably; clicking the X must close the sidebar and trigger a slide-out close animation in the same direction the sidebar opens (e.g., left sidebar slides out left; right sidebar slides out right).",
       "reqIds": [
         "REQ-2"
       ],
@@ -22,20 +31,18 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Replace Internet Identity admin authentication with custom username/password admin login",
+      "summary": "Add global animated neon/glow background effect across the entire website",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Update the backend admin credential initialization so that the only valid admin login is username \"Thejas Kinnigoli\" with password \"789852qwertyuiop\" (and the stored/checked value uses the existing password hashing mechanism).",
-      "reqIds": [
-        "REQ-1"
-      ],
+      "summary": "Implement working sidebar close (X) button that triggers a slide-out close animation",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Replace Internet Identity admin auth with fixed username/password login",
+  "projectName": "Global neon/glow animated background + working sidebar close (X) with slide-out animation",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

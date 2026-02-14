@@ -1,23 +1,15 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
+import { RouterProvider, createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import NewsPage from './pages/NewsPage';
 import NewsDetailPage from './pages/NewsDetailPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import CertificationsPage from './pages/CertificationsPage';
 import TermsPage from './pages/TermsPage';
-import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-import AdminProductsPage from './pages/admin/AdminProductsPage';
-import AdminNewsPage from './pages/admin/AdminNewsPage';
-import AdminLogoPage from './pages/admin/AdminLogoPage';
-import AdminSiteSettingsPage from './pages/admin/AdminSiteSettingsPage';
-import AdminOrdersPage from './pages/admin/AdminOrdersPage';
-import AdminRouteGuard from './components/admin/AdminRouteGuard';
+import SiteLayout from './components/layout/SiteLayout';
+import Footer from './components/layout/Footer';
+import GlobalNeonBackground from './components/brand/GlobalNeonBackground';
 import { Toaster } from '@/components/ui/sonner';
 
 const queryClient = new QueryClient({
@@ -31,9 +23,13 @@ const queryClient = new QueryClient({
 
 const rootRoute = createRootRoute({
   component: () => (
-    <SiteLayout>
-      <Outlet />
-    </SiteLayout>
+    <>
+      <GlobalNeonBackground />
+      <div className="min-h-screen flex flex-col relative z-10">
+        <SiteLayout />
+        <Footer />
+      </div>
+    </>
   ),
 });
 
@@ -67,94 +63,16 @@ const newsDetailRoute = createRoute({
   component: NewsDetailPage,
 });
 
-const aboutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/about',
-  component: AboutPage,
-});
-
-const contactRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/contact',
-  component: ContactPage,
-});
-
-const certificationsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/certifications',
-  component: CertificationsPage,
-});
-
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/terms',
   component: TermsPage,
 });
 
-const adminLoginRoute = createRoute({
+const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
-  component: AdminLoginPage,
-});
-
-const adminDashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/dashboard',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminDashboardPage />
-    </AdminRouteGuard>
-  ),
-});
-
-const adminProductsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/products',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminProductsPage />
-    </AdminRouteGuard>
-  ),
-});
-
-const adminNewsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/news',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminNewsPage />
-    </AdminRouteGuard>
-  ),
-});
-
-const adminLogoRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/logo',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminLogoPage />
-    </AdminRouteGuard>
-  ),
-});
-
-const adminSettingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/settings',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminSiteSettingsPage />
-    </AdminRouteGuard>
-  ),
-});
-
-const adminOrdersRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/admin/orders',
-  component: () => (
-    <AdminRouteGuard>
-      <AdminOrdersPage />
-    </AdminRouteGuard>
-  ),
+  component: AdminDashboardPage,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -163,17 +81,8 @@ const routeTree = rootRoute.addChildren([
   productDetailRoute,
   newsRoute,
   newsDetailRoute,
-  aboutRoute,
-  contactRoute,
-  certificationsRoute,
   termsRoute,
-  adminLoginRoute,
-  adminDashboardRoute,
-  adminProductsRoute,
-  adminNewsRoute,
-  adminLogoRoute,
-  adminSettingsRoute,
-  adminOrdersRoute,
+  adminRoute,
 ]);
 
 const router = createRouter({ routeTree, defaultPreload: 'intent' });

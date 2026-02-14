@@ -1,6 +1,6 @@
 export function useLiveUpdateConfig() {
   return {
-    refetchInterval: 30000, // 30 seconds
+    refetchInterval: 10000, // 10 seconds for faster order updates
     refetchOnWindowFocus: true,
   };
 }

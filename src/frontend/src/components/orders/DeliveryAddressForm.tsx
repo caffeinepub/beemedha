@@ -1,113 +1,80 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 import type { DeliveryAddress } from '../../backend';
 
 interface DeliveryAddressFormProps {
   initialAddress?: DeliveryAddress;
-  onSuccess?: (address: DeliveryAddress) => void | Promise<void>;
-  onCancel?: () => void;
-  showActions?: boolean;
+  onSuccess: (address: DeliveryAddress) => Promise<void>;
+  isSubmitting?: boolean;
 }
 
-export default function DeliveryAddressForm({ 
-  initialAddress, 
-  onSuccess, 
-  onCancel,
-  showActions = true 
+export default function DeliveryAddressForm({
+  initialAddress,
+  onSuccess,
+  isSubmitting = false,
 }: DeliveryAddressFormProps) {
-  const [formData, setFormData] = useState<DeliveryAddress>({
-    name: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'India',
-    phoneNumber: '',
-  });
-  const [error, setError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (initialAddress) {
-      setFormData(initialAddress);
+  const [formData, setFormData] = useState<DeliveryAddress>(
+    initialAddress || {
+      name: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+      phoneNumber: '',
     }
-  }, [initialAddress]);
+  );
 
-  const handleChange = (field: keyof DeliveryAddress, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const [errors, setErrors] = useState<Partial<Record<keyof DeliveryAddress, string>>>({});
+
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof DeliveryAddress, string>> = {};
+
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.addressLine1.trim()) newErrors.addressLine1 = 'Address is required';
+    if (!formData.city.trim()) newErrors.city = 'City is required';
+    if (!formData.state.trim()) newErrors.state = 'State is required';
+    if (!formData.postalCode.trim()) newErrors.postalCode = 'Postal code is required';
+    if (!formData.country.trim()) newErrors.country = 'Country is required';
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^\+?[\d\s-()]+$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Invalid phone number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    if (!validate()) return;
 
-    // Validation
-    if (!formData.name.trim()) {
-      setError('Name is required');
-      return;
-    }
-    if (!formData.addressLine1.trim()) {
-      setError('Address Line 1 is required');
-      return;
-    }
-    if (!formData.city.trim()) {
-      setError('City is required');
-      return;
-    }
-    if (!formData.state.trim()) {
-      setError('State is required');
-      return;
-    }
-    if (!formData.postalCode.trim()) {
-      setError('Postal Code is required');
-      return;
-    }
-    if (!formData.phoneNumber.trim()) {
-      setError('Phone Number is required');
-      return;
-    }
+    await onSuccess(formData);
+  };
 
-    setIsSaving(true);
-    try {
-      await onSuccess?.(formData);
-    } catch (err) {
-      console.error('Save address error:', err);
-      setError('Failed to save address. Please try again.');
-    } finally {
-      setIsSaving(false);
+  const handleChange = (field: keyof DeliveryAddress, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="John Doe"
-            disabled={isSaving}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="phoneNumber">Phone Number *</Label>
-          <Input
-            id="phoneNumber"
-            type="tel"
-            value={formData.phoneNumber}
-            onChange={(e) => handleChange('phoneNumber', e.target.value)}
-            placeholder="1234567890"
-            disabled={isSaving}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="name">Full Name *</Label>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          placeholder="John Doe"
+          disabled={isSubmitting}
+        />
+        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
       </div>
 
       <div className="space-y-2">
@@ -117,8 +84,9 @@ export default function DeliveryAddressForm({
           value={formData.addressLine1}
           onChange={(e) => handleChange('addressLine1', e.target.value)}
           placeholder="Street address, P.O. box"
-          disabled={isSaving}
+          disabled={isSubmitting}
         />
+        {errors.addressLine1 && <p className="text-sm text-destructive">{errors.addressLine1}</p>}
       </div>
 
       <div className="space-y-2">
@@ -128,20 +96,21 @@ export default function DeliveryAddressForm({
           value={formData.addressLine2}
           onChange={(e) => handleChange('addressLine2', e.target.value)}
           placeholder="Apartment, suite, unit, building, floor, etc."
-          disabled={isSaving}
+          disabled={isSubmitting}
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="city">City *</Label>
           <Input
             id="city"
             value={formData.city}
             onChange={(e) => handleChange('city', e.target.value)}
-            placeholder="Mumbai"
-            disabled={isSaving}
+            placeholder="City"
+            disabled={isSubmitting}
           />
+          {errors.city && <p className="text-sm text-destructive">{errors.city}</p>}
         </div>
 
         <div className="space-y-2">
@@ -150,53 +119,55 @@ export default function DeliveryAddressForm({
             id="state"
             value={formData.state}
             onChange={(e) => handleChange('state', e.target.value)}
-            placeholder="Maharashtra"
-            disabled={isSaving}
+            placeholder="State"
+            disabled={isSubmitting}
           />
+          {errors.state && <p className="text-sm text-destructive">{errors.state}</p>}
         </div>
+      </div>
 
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="postalCode">Postal Code *</Label>
           <Input
             id="postalCode"
             value={formData.postalCode}
             onChange={(e) => handleChange('postalCode', e.target.value)}
-            placeholder="400001"
-            disabled={isSaving}
+            placeholder="123456"
+            disabled={isSubmitting}
           />
+          {errors.postalCode && <p className="text-sm text-destructive">{errors.postalCode}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="country">Country *</Label>
+          <Input
+            id="country"
+            value={formData.country}
+            onChange={(e) => handleChange('country', e.target.value)}
+            placeholder="India"
+            disabled={isSubmitting}
+          />
+          {errors.country && <p className="text-sm text-destructive">{errors.country}</p>}
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="country">Country *</Label>
+        <Label htmlFor="phoneNumber">Phone Number *</Label>
         <Input
-          id="country"
-          value={formData.country}
-          onChange={(e) => handleChange('country', e.target.value)}
-          placeholder="India"
-          disabled={isSaving}
-        />
+          id="phoneNumber"
+          type="tel"
+          value={formData.phoneNumber}
+          onChange={(e) => handleChange('phoneNumber', e.target.value)}
+          placeholder="+91 98765 43210"
+          disabled={isSubmitting}
+          />
+        {errors.phoneNumber && <p className="text-sm text-destructive">{errors.phoneNumber}</p>}
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {showActions && (
-        <div className="flex gap-2 justify-end">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Address'}
-          </Button>
-        </div>
-      )}
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? 'Saving...' : 'Save Address'}
+      </Button>
     </form>
   );
 }

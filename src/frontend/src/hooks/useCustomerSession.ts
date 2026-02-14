@@ -1,92 +1,93 @@
 import { useState, useEffect } from 'react';
 import { useActor } from './useActor';
-import type { CustomerIdentifier } from '../backend';
 
-const CUSTOMER_SESSION_KEY = 'beemedha_customer_session';
+interface CustomerSessionData {
+  sessionId: string;
+  email: string;
+  expiresAt: number;
+}
+
+const STORAGE_KEY = 'customer_session';
 
 export function useCustomerSession() {
   const { actor } = useActor();
-  const [sessionId, setSessionId] = useState<string | null>(() => {
-    return localStorage.getItem(CUSTOMER_SESSION_KEY);
-  });
+  const [session, setSession] = useState<CustomerSessionData | null>(null);
   const [isValidating, setIsValidating] = useState(true);
-  const [isValid, setIsValid] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState<CustomerIdentifier | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Validate session on mount and when actor changes
+  // Load and validate session on mount
   useEffect(() => {
     const validateSession = async () => {
-      if (!actor || !sessionId) {
-        setIsValid(false);
-        setCustomerInfo(null);
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored || !actor) {
         setIsValidating(false);
         return;
       }
 
       try {
-        const valid = await actor.validateCustomerSession(sessionId);
-        setIsValid(valid);
+        const data: CustomerSessionData = JSON.parse(stored);
         
-        if (valid) {
-          const info = await actor.getCustomerSessionInfo(sessionId);
-          setCustomerInfo(info);
+        // Check expiry
+        if (Date.now() > data.expiresAt) {
+          localStorage.removeItem(STORAGE_KEY);
+          setSession(null);
+          setIsValidating(false);
+          return;
+        }
+
+        // Validate with backend
+        const isValid = await actor.isCustomerSessionValid(data.sessionId);
+        if (isValid) {
+          setSession(data);
         } else {
-          localStorage.removeItem(CUSTOMER_SESSION_KEY);
-          setSessionId(null);
-          setCustomerInfo(null);
+          localStorage.removeItem(STORAGE_KEY);
+          setSession(null);
         }
       } catch (error) {
         console.error('Session validation error:', error);
-        setIsValid(false);
-        setCustomerInfo(null);
-        localStorage.removeItem(CUSTOMER_SESSION_KEY);
-        setSessionId(null);
+        localStorage.removeItem(STORAGE_KEY);
+        setSession(null);
       } finally {
         setIsValidating(false);
       }
     };
 
     validateSession();
-  }, [actor, sessionId]);
+  }, [actor]);
 
-  const login = async (identifier: CustomerIdentifier): Promise<boolean> => {
+  const login = async (email: string) => {
     if (!actor) throw new Error('Actor not available');
-
+    
+    setIsLoggingIn(true);
     try {
-      const newSessionId = await actor.customerLogin(identifier);
-      if (newSessionId) {
-        localStorage.setItem(CUSTOMER_SESSION_KEY, newSessionId);
-        setSessionId(newSessionId);
-        setIsValid(true);
-        setCustomerInfo(identifier);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      const sessionId = await actor.loginCustomerByEmail(email);
+      
+      // 7 days expiry (matching backend CUSTOMER_SESSION_TIMEOUT)
+      const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
+      
+      const sessionData: CustomerSessionData = {
+        sessionId,
+        email,
+        expiresAt,
+      };
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+      setSession(sessionData);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
-  const logout = async () => {
-    if (actor && sessionId) {
-      try {
-        await actor.customerLogout(sessionId);
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
-    }
-    localStorage.removeItem(CUSTOMER_SESSION_KEY);
-    setSessionId(null);
-    setIsValid(false);
-    setCustomerInfo(null);
+  const logout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setSession(null);
   };
 
   return {
-    sessionId,
-    isValid,
+    session,
+    isAuthenticated: !!session,
     isValidating,
-    customerInfo,
+    isLoggingIn,
     login,
     logout,
   };

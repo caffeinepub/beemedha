@@ -1,265 +1,268 @@
 import { useState } from 'react';
-import { useCustomerSession } from '../../hooks/useCustomerSession';
-import { useGetDeliveryAddress, useGetCustomerOrders } from '../../hooks/useQueries';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Mail, Phone, LogOut, User, MapPin, Package } from 'lucide-react';
-import { toast } from 'sonner';
-import type { CustomerIdentifier } from '../../backend';
-import DeliveryAddressForm from '../orders/DeliveryAddressForm';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCustomerSession } from '../../hooks/useCustomerSession';
+import { useCustomerAddresses } from '../../hooks/useCustomerAddresses';
+import { useCustomerOrders } from '../../hooks/useCustomerOrders';
+import { toast } from 'sonner';
+import { Mail, MapPin, Package, Trash2, User, LogOut } from 'lucide-react';
+import DeliveryAddressForm from '../orders/DeliveryAddressForm';
+import { formatINR } from '../../utils/price';
+import type { DeliveryAddress, OrderStatus } from '../../backend';
+import NeonSurface from '../brand/NeonSurface';
 
 interface CustomerLoginDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-function getOrderStatusBadge(status: string) {
-  switch (status) {
-    case 'pending':
-      return <Badge variant="secondary">Pending</Badge>;
-    case 'inProgress':
-      return <Badge className="bg-blue-500">In Progress</Badge>;
-    case 'transit':
-      return <Badge className="bg-purple-500">In Transit</Badge>;
-    case 'delivered':
-      return <Badge className="bg-green-500">Delivered</Badge>;
-    default:
-      return <Badge>{status}</Badge>;
-  }
-}
+const statusColors: Record<OrderStatus, string> = {
+  pending: 'neon-badge-pending',
+  inProgress: 'neon-badge-progress',
+  transit: 'neon-badge-transit',
+  delivered: 'neon-badge-delivered',
+};
+
+const statusLabels: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  inProgress: 'Confirmed',
+  transit: 'Shipped',
+  delivered: 'Delivered',
+};
 
 export default function CustomerLoginDialog({ open, onOpenChange }: CustomerLoginDialogProps) {
-  const { isValid, customerInfo, login, logout } = useCustomerSession();
-  const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
-  const [identifier, setIdentifier] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders'>('profile');
-
-  const addressQuery = useGetDeliveryAddress();
-  const ordersQuery = useGetCustomerOrders();
+  const { session, isAuthenticated, isLoggingIn, login, logout } = useCustomerSession();
+  const { addresses, saveAddress, isSaving, deleteAddress, isDeleting } = useCustomerAddresses();
+  const { orders, isLoading: ordersLoading } = useCustomerOrders();
+  const [email, setEmail] = useState('');
+  const [showAddressForm, setShowAddressForm] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (!identifier.trim()) {
-      setError(`Please enter your ${identifierType}`);
+    if (!email.trim()) {
+      toast.error('Please enter your email');
       return;
     }
-
-    // Basic validation
-    if (identifierType === 'email' && !identifier.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    if (identifierType === 'phone' && !/^\d{10}$/.test(identifier.replace(/\D/g, ''))) {
-      setError('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    setIsLoading(true);
 
     try {
-      const customerIdentifier: CustomerIdentifier = 
-        identifierType === 'email' 
-          ? { __kind__: 'email', email: identifier }
-          : { __kind__: 'phone', phone: identifier };
-
-      const success = await login(customerIdentifier);
-      
-      if (success) {
-        toast.success('Login successful!');
-        setIdentifier('');
-        setActiveTab('profile');
-      } else {
-        setError('Login failed. Please try again.');
-      }
+      await login(email.trim());
+      toast.success('Logged in successfully');
+      setEmail('');
     } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
+      toast.error('Login failed. Please try again.');
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    toast.success('Logged out successfully');
+  const handleLogout = () => {
+    logout();
     onOpenChange(false);
-    setIdentifier('');
-    setError('');
+    toast.success('Logged out successfully');
   };
 
-  const getIdentifierDisplay = () => {
-    if (!customerInfo) return '';
-    if (customerInfo.__kind__ === 'email') return customerInfo.email;
-    if (customerInfo.__kind__ === 'phone') return customerInfo.phone;
-    return '';
+  const handleSaveAddress = async (address: DeliveryAddress) => {
+    try {
+      await saveAddress(address);
+      toast.success('Address saved successfully');
+      setShowAddressForm(false);
+    } catch (error) {
+      toast.error('Failed to save address');
+    }
   };
 
-  if (isValid && customerInfo) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              My Account
-            </DialogTitle>
-            <DialogDescription>
-              Logged in as {getIdentifierDisplay()}
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'profile' | 'orders')} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="profile">
-                <MapPin className="h-4 w-4 mr-2" />
-                Profile & Address
-              </TabsTrigger>
-              <TabsTrigger value="orders">
-                <Package className="h-4 w-4 mr-2" />
-                My Orders
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="profile" className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-3">Delivery Address</h3>
-                <DeliveryAddressForm 
-                  initialAddress={addressQuery.data || undefined}
-                  onSuccess={() => {
-                    toast.success('Address saved successfully');
-                  }}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="orders" className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-3">Order History</h3>
-                {ordersQuery.isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading orders...</p>
-                ) : ordersQuery.data && ordersQuery.data.length > 0 ? (
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-4">
-                      {ordersQuery.data.map((order) => (
-                        <div key={order.id.toString()} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold">Order #{order.id.toString()}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(Number(order.createdAt) / 1000000).toLocaleDateString()}
-                              </p>
-                            </div>
-                            {getOrderStatusBadge(order.status)}
-                          </div>
-                          <Separator />
-                          <div className="space-y-2">
-                            <p className="text-sm">
-                              <span className="font-medium">Items:</span> {order.items.length}
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">Total:</span> ₹{order.totalPrice.toFixed(2)}
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">Delivery to:</span> {order.address.name}, {order.address.city}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No orders yet</p>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex justify-end pt-4 border-t">
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const handleDeleteAddress = async (index: number) => {
+    try {
+      await deleteAddress(index);
+      toast.success('Address deleted');
+    } catch (error) {
+      toast.error('Failed to delete address');
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Customer Login</DialogTitle>
-          <DialogDescription>
-            Enter your email or phone number to access your account
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 border-0 z-[100]">
+        <NeonSurface className="max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            {!isAuthenticated ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-serif neon-text-glow">Customer Login</DialogTitle>
+                  <DialogDescription className="neon-text-muted">
+                    Enter your email to access your account. No password required.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleLogin} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="neon-text">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-5 w-5 neon-icon-glow" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 neon-input"
+                        disabled={isLoggingIn}
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full neon-button-primary" disabled={isLoggingIn}>
+                    {isLoggingIn ? 'Logging in...' : 'Login'}
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <DialogTitle className="text-2xl font-serif neon-text-glow">My Account</DialogTitle>
+                      <DialogDescription className="flex items-center gap-2 mt-1 neon-text-muted">
+                        <User className="h-4 w-4" />
+                        {session?.email}
+                      </DialogDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleLogout} className="neon-button-outline">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                </DialogHeader>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <Tabs value={identifierType} onValueChange={(v) => setIdentifierType(v as 'email' | 'phone')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email">
-                <Mail className="h-4 w-4 mr-2" />
-                Email
-              </TabsTrigger>
-              <TabsTrigger value="phone">
-                <Phone className="h-4 w-4 mr-2" />
-                Phone
-              </TabsTrigger>
-            </TabsList>
+                <Tabs defaultValue="profile" className="mt-4">
+                  <TabsList className="grid w-full grid-cols-3 neon-tabs-list">
+                    <TabsTrigger value="profile" className="neon-tab-trigger">Profile</TabsTrigger>
+                    <TabsTrigger value="addresses" className="neon-tab-trigger">Addresses</TabsTrigger>
+                    <TabsTrigger value="orders" className="neon-tab-trigger">Orders</TabsTrigger>
+                  </TabsList>
 
-            <TabsContent value="email" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-            </TabsContent>
+                  <TabsContent value="profile" className="space-y-4 mt-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-4 neon-card rounded-lg">
+                        <Mail className="h-5 w-5 neon-icon-glow" />
+                        <div>
+                          <p className="text-sm neon-text-muted">Email</p>
+                          <p className="font-medium neon-text">{session?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
 
-            <TabsContent value="phone" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="1234567890"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+                  <TabsContent value="addresses" className="space-y-4 mt-4">
+                    {!showAddressForm ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm neon-text-muted">
+                            {addresses.length === 0 ? 'No saved addresses' : `${addresses.length} saved address${addresses.length !== 1 ? 'es' : ''}`}
+                          </p>
+                          <Button onClick={() => setShowAddressForm(true)} size="sm" className="neon-button-primary">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            Add Address
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          {addresses.map((address, index) => (
+                            <div key={index} className="p-4 neon-card rounded-lg">
+                              <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                  <p className="font-medium neon-text">{address.name}</p>
+                                  <p className="text-sm neon-text-muted">
+                                    {address.addressLine1}
+                                    {address.addressLine2 && `, ${address.addressLine2}`}
+                                  </p>
+                                  <p className="text-sm neon-text-muted">
+                                    {address.city}, {address.state} {address.postalCode}
+                                  </p>
+                                  <p className="text-sm neon-text-muted">{address.phoneNumber}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteAddress(index)}
+                                  disabled={isDeleting}
+                                  className="neon-button-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium neon-text">Add New Address</h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowAddressForm(false)}
+                            className="neon-button-ghost"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                        <DeliveryAddressForm
+                          onSuccess={handleSaveAddress}
+                          isSubmitting={isSaving}
+                        />
+                      </div>
+                    )}
+                  </TabsContent>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
-          </Button>
-        </form>
+                  <TabsContent value="orders" className="space-y-4 mt-4">
+                    {ordersLoading ? (
+                      <p className="text-center neon-text-muted py-8">Loading orders...</p>
+                    ) : orders.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Package className="h-12 w-12 neon-icon-glow mx-auto mb-3" />
+                        <p className="neon-text-muted">No orders yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {orders.map((order) => (
+                          <div key={order.id.toString()} className="p-4 neon-card rounded-lg space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium neon-text">Order #{order.id.toString()}</p>
+                                <p className="text-sm neon-text-muted">
+                                  {new Date(Number(order.createdAt) / 1_000_000).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <Badge className={statusColors[order.status]}>
+                                {statusLabels[order.status]}
+                              </Badge>
+                            </div>
+                            <Separator className="neon-separator" />
+                            <div className="space-y-2">
+                              {order.items.map((item, idx) => (
+                                <div key={idx} className="flex justify-between text-sm">
+                                  <span className="neon-text-muted">
+                                    Product #{item.productId.toString()} × {item.quantity.toString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex justify-between items-center pt-2">
+                              <span className="font-medium neon-text">Total</span>
+                              <span className="font-bold neon-text-accent">{formatINR(order.totalPrice)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
+          </div>
+        </NeonSurface>
       </DialogContent>
     </Dialog>
   );

@@ -110,15 +110,15 @@ export default function HomePage() {
               { name: 'Herbal Infused Honey', img: '/assets/generated/herbal-infused-honey.dim_800x800.png' },
               { name: 'Honey Comb', img: '/assets/generated/honey-comb.dim_800x800.png' },
             ].map((product) => (
-              <BrandCard key={product.name} className="overflow-hidden group cursor-pointer">
-                <div className="aspect-square overflow-hidden bg-muted">
+              <BrandCard key={product.name} className="overflow-hidden group cursor-pointer hover:shadow-soft-lg transition-shadow">
+                <div className="aspect-square overflow-hidden">
                   <img
                     src={product.img}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <div className="p-4 text-center">
+                <div className="p-4">
                   <h3 className="font-serif font-semibold text-lg">{product.name}</h3>
                 </div>
               </BrandCard>
@@ -128,7 +128,7 @@ export default function HomePage() {
             <Button
               size="lg"
               onClick={() => navigate({ to: '/products' })}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               View All Products
             </Button>
@@ -139,26 +139,29 @@ export default function HomePage() {
       {/* Quality Assurance */}
       <Section className="bg-muted/30">
         <Container>
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <img
-              src="/assets/generated/quality-seal.dim_512x512.png"
-              alt="Quality Seal"
-              className="w-32 h-32 mx-auto"
-            />
-            <h2 className="text-4xl md:text-5xl font-serif font-bold">
-              Certified Quality & Purity
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+              Quality You Can Trust
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Every jar of Beemedha honey is tested and certified by independent laboratories. We are committed to transparency and providing you with the purest honey nature has to offer.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Every jar of our honey undergoes strict quality control to ensure you receive only the best.
             </p>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate({ to: '/certifications' })}
-              className="font-semibold border-2"
-            >
-              View Our Certifications
-            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: 'Lab Certified', desc: 'Tested for purity and quality' },
+              { title: 'No Additives', desc: 'Pure honey, nothing else' },
+              { title: 'Ethically Sourced', desc: 'Supporting local beekeepers' },
+              { title: 'Fresh Harvest', desc: 'Directly from the hive' },
+            ].map((item) => (
+              <div key={item.title} className="text-center">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-serif font-semibold text-lg mb-2">{item.title}</h3>
+                <p className="text-muted-foreground">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </Container>
       </Section>

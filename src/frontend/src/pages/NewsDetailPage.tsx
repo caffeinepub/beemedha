@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from '@tanstack/react-router';
+import { useParams, useNavigate } from '@tanstack/react-router';
 import { Section, Container, BrandCard } from '../components/brand/BrandPrimitives';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useGetAllProductUpdates, useGetProduct } from '../hooks/useQueries';
@@ -107,21 +107,19 @@ export default function NewsDetailPage() {
                       <Package className="h-5 w-5 text-primary" />
                       <h3 className="text-xl font-serif font-semibold">Related Product</h3>
                     </div>
-                    <Link to="/products/$productId" params={{ productId: product.id.toString() }}>
-                      <div className="flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary transition-colors">
-                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                          <img
-                            src={normalizeAssetUrl(product.image) || '/assets/generated/raw-forest-honey.dim_800x800.png'}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-lg">{product.name}</h4>
-                          <PriceDisplay price={product.price} size="sm" />
-                        </div>
+                    <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        <img
+                          src={normalizeAssetUrl(product.image) || '/assets/generated/raw-forest-honey.dim_800x800.png'}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </Link>
+                      <div>
+                        <h4 className="font-semibold text-lg">{product.name}</h4>
+                        <PriceDisplay price={product.price} size="sm" />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

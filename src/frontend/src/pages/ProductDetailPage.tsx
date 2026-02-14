@@ -1,28 +1,26 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { Section, Container, BrandCard } from '../components/brand/BrandPrimitives';
-import { usePageMeta } from '../hooks/usePageMeta';
-import { useGetProduct, useGetProductUpdatesByProduct } from '../hooks/useQueries';
-import { useCustomerSession } from '../hooks/useCustomerSession';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import PriceDisplay from '../components/products/PriceDisplay';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useGetProduct } from '../hooks/useQueries';
+import { useCart } from '../hooks/useCart';
+import { usePageMeta } from '../hooks/usePageMeta';
 import VariantSelector from '../components/products/VariantSelector';
-import PlaceOrderDialog from '../components/orders/PlaceOrderDialog';
-import { ArrowLeft, Package, Leaf, Award, ShoppingCart } from 'lucide-react';
-import type { AvailabilityStatus, Price, OrderItem, WeightVariant, FlavorVariant } from '../backend';
+import PriceDisplay from '../components/products/PriceDisplay';
 import { normalizeAssetUrl } from '../utils/assets';
 import { toast } from 'sonner';
+import { ArrowLeft, ShoppingCart, Minus, Plus } from 'lucide-react';
+import type { Price, WeightVariant, FlavorVariant, AvailabilityStatus } from '../backend';
 
 function getAvailabilityBadge(status: AvailabilityStatus) {
   switch (status) {
     case 'inStock':
-      return <Badge className="bg-accent text-accent-foreground text-base px-4 py-1">In Stock</Badge>;
+      return <Badge className="bg-accent text-accent-foreground">In Stock</Badge>;
     case 'limited':
-      return <Badge variant="secondary" className="text-base px-4 py-1">Limited Stock</Badge>;
+      return <Badge variant="secondary">Limited Stock</Badge>;
     case 'outOfStock':
-      return <Badge variant="destructive" className="text-base px-4 py-1">Out of Stock</Badge>;
+      return <Badge variant="destructive">Out of Stock</Badge>;
   }
 }
 
@@ -35,257 +33,182 @@ function getCategoryImage(category: string): string {
   return categoryMap[category] || '/assets/products/honey.jpeg';
 }
 
-function getCategoryName(category: string): string {
-  const categoryNames: Record<string, string> = {
-    beeProducts: 'Bee Products',
-    naturalHoney: 'Natural Honey',
-    rawHoney: 'Raw Honey',
-  };
-  return categoryNames[category] || category;
-}
-
 export default function ProductDetailPage() {
-  const { productId } = useParams({ from: '/products/$productId' });
+  const { productId } = useParams({ strict: false });
   const navigate = useNavigate();
-  const { isValid: isLoggedIn } = useCustomerSession();
+  const { addItem } = useCart();
   
-  const productQuery = useGetProduct(BigInt(productId));
-  const product = productQuery.data;
+  const productIdBigInt = productId ? BigInt(productId) : null;
+  const { data: product, isLoading } = useGetProduct(productIdBigInt);
 
-  const updatesQuery = useGetProductUpdatesByProduct(BigInt(productId));
-  const updates = updatesQuery.data || [];
-
-  // State for variant selection
-  const [selectedVariantPrice, setSelectedVariantPrice] = useState<Price | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<Price | null>(null);
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
-  const [selectedWeightVariant, setSelectedWeightVariant] = useState<WeightVariant | null>(null);
-  const [selectedFlavorVariant, setSelectedFlavorVariant] = useState<FlavorVariant | null>(null);
-  const [quantity, setQuantity] = useState<bigint>(1n);
-  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [selectedWeightVariant, setSelectedWeightVariant] = useState<WeightVariant | undefined>();
+  const [selectedFlavorVariant, setSelectedFlavorVariant] = useState<FlavorVariant | undefined>();
+  const [quantity, setQuantity] = useState(1);
 
   usePageMeta(
     product?.name || 'Product Details',
-    product?.description || 'View product details and information.'
+    product?.description || 'View product details'
   );
 
-  if (productQuery.isLoading) {
+  const handleVariantChange = (
+    price: Price,
+    label: string,
+    weightVariant?: WeightVariant,
+    flavorVariant?: FlavorVariant
+  ) => {
+    setSelectedPrice(price);
+    setSelectedVariantLabel(label);
+    setSelectedWeightVariant(weightVariant);
+    setSelectedFlavorVariant(flavorVariant);
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    const priceToUse = selectedPrice || product.price;
+    
+    addItem(
+      product,
+      quantity,
+      priceToUse,
+      selectedVariantLabel || undefined,
+      selectedWeightVariant,
+      selectedFlavorVariant
+    );
+
+    toast.success(`Added ${quantity} ${product.name} to cart`);
+    setQuantity(1);
+  };
+
+  if (isLoading) {
     return (
-      <Section className="py-12">
-        <Container>
-          <div className="text-center">
-            <p className="text-muted-foreground">Loading product...</p>
+      <div className="container mx-auto px-4 py-8">
+        <Skeleton className="h-8 w-32 mb-8" />
+        <div className="grid md:grid-cols-2 gap-8">
+          <Skeleton className="aspect-square" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
-        </Container>
-      </Section>
+        </div>
+      </div>
     );
   }
 
   if (!product) {
     return (
-      <Section className="py-12">
-        <Container>
-          <div className="text-center space-y-4">
-            <h1 className="text-3xl font-serif font-bold">Product Not Found</h1>
-            <p className="text-muted-foreground">The product you're looking for doesn't exist.</p>
-            <Button onClick={() => navigate({ to: '/products' })}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
-            </Button>
-          </div>
-        </Container>
-      </Section>
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-serif font-bold mb-4">Product Not Found</h1>
+        <Button onClick={() => navigate({ to: '/products' })}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
+      </div>
     );
   }
 
-  const imageUrl = product.image 
-    ? normalizeAssetUrl(product.image) 
+  const imageUrl = product.image
+    ? normalizeAssetUrl(product.image)
     : getCategoryImage(product.category);
 
-  // Determine which price to display
-  const displayPrice = selectedVariantPrice || product.price;
-
-  const handlePlaceOrder = () => {
-    if (!isLoggedIn) {
-      toast.error('Please log in to place an order');
-      return;
-    }
-
-    if (product.availability === 'outOfStock') {
-      toast.error('This product is currently out of stock');
-      return;
-    }
-
-    const orderItem: OrderItem = {
-      productId: product.id,
-      quantity,
-      weightVariant: selectedWeightVariant || undefined,
-      flavorVariant: selectedFlavorVariant || undefined,
-    };
-
-    const totalPrice = (selectedVariantPrice?.salePrice || selectedVariantPrice?.listPrice || product.price.salePrice || product.price.listPrice) * Number(quantity);
-
-    setOrderDialogOpen(true);
-  };
-
-  const orderItems: OrderItem[] = [{
-    productId: product.id,
-    quantity,
-    weightVariant: selectedWeightVariant || undefined,
-    flavorVariant: selectedFlavorVariant || undefined,
-  }];
-
-  const totalPrice = (selectedVariantPrice?.salePrice || selectedVariantPrice?.listPrice || product.price.salePrice || product.price.listPrice) * Number(quantity);
+  const displayPrice = selectedPrice || product.price;
+  const isOutOfStock = product.availability === 'outOfStock';
 
   return (
-    <div>
-      <Section className="py-8">
-        <Container>
-          <Button
-            variant="ghost"
-            onClick={() => navigate({ to: '/products' })}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Products
-          </Button>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate({ to: '/products' })}
+          className="mb-6"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Image */}
-            <div className="space-y-4">
-              <div className="aspect-square rounded-premium overflow-hidden bg-muted">
-                <img
-                  src={imageUrl}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+          {/* Product Image */}
+          <div className="aspect-square overflow-hidden rounded-lg bg-muted">
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
 
-            {/* Product Info */}
-            <div className="space-y-6">
-              <div>
-                <Badge variant="outline" className="mb-3">
-                  {getCategoryName(product.category)}
-                </Badge>
-                <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+          {/* Product Info */}
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h1 className="text-3xl md:text-4xl font-serif font-bold">
                   {product.name}
                 </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  {product.description}
-                </p>
+                {getAvailabilityBadge(product.availability)}
               </div>
+              <PriceDisplay price={displayPrice} className="text-2xl" />
+            </div>
 
-              <Separator />
+            <p className="text-muted-foreground leading-relaxed">
+              {product.description}
+            </p>
 
-              {/* Variant Selector */}
-              {product.variants && (
-                <>
-                  <VariantSelector
-                    variants={product.variants}
-                    onVariantChange={(price, label, weightVariant, flavorVariant) => {
-                      setSelectedVariantPrice(price);
-                      setSelectedVariantLabel(label);
-                      setSelectedWeightVariant(weightVariant || null);
-                      setSelectedFlavorVariant(flavorVariant || null);
-                    }}
-                  />
-                  <Separator />
-                </>
-              )}
+            {/* Variant Selector */}
+            {product.variants && (
+              <VariantSelector
+                variants={product.variants}
+                onVariantChange={handleVariantChange}
+              />
+            )}
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <PriceDisplay price={displayPrice} size="lg" />
-                  {getAvailabilityBadge(product.availability)}
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={handlePlaceOrder}
-                    disabled={product.availability === 'outOfStock'}
-                    size="lg"
-                    className="flex-1"
-                  >
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Place Order
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Product Features */}
-              <div className="space-y-4">
-                <h3 className="font-serif font-semibold text-xl">Product Features</h3>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Leaf className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">100% Natural</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Pure and unprocessed, straight from nature
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Award className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Premium Quality</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Carefully sourced and quality tested
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Package className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Secure Packaging</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Safely packaged to preserve freshness
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Quantity Selector */}
+            <div className="space-y-2">
+              <label className="text-base font-semibold">Quantity</label>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={isOutOfStock}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-12 text-center font-semibold text-lg">{quantity}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantity(quantity + 1)}
+                  disabled={isOutOfStock}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
+
+            {/* Add to Cart Button */}
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+            >
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+            </Button>
+
+            {/* Stock Info */}
+            {product.stock > 0 && product.stock <= 10 && (
+              <p className="text-sm text-muted-foreground">
+                Only {product.stock.toString()} left in stock
+              </p>
+            )}
           </div>
-        </Container>
-      </Section>
-
-      {/* Product Updates */}
-      {updates.length > 0 && (
-        <Section className="bg-muted/30">
-          <Container>
-            <h2 className="text-3xl font-serif font-bold mb-8">Product Updates</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {updates.map((update) => (
-                <BrandCard key={update.id.toString()} className="p-6">
-                  <Badge variant="outline" className="mb-3">
-                    {update.productUpdateType}
-                  </Badge>
-                  <p className="text-muted-foreground">{update.message}</p>
-                  <p className="text-xs text-muted-foreground mt-4">
-                    {new Date(Number(update.timestamp) / 1000000).toLocaleDateString()}
-                  </p>
-                </BrandCard>
-              ))}
-            </div>
-          </Container>
-        </Section>
-      )}
-
-      <PlaceOrderDialog
-        open={orderDialogOpen}
-        onOpenChange={setOrderDialogOpen}
-        orderItems={orderItems}
-        totalPrice={totalPrice}
-      />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,54 +1,60 @@
 {
   "kind": "build_request",
-  "title": "Replace Internet Identity admin auth with fixed username/password login",
+  "title": "Global neon/glow animated background + working sidebar close (X) with slide-out animation",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the backend admin credential initialization so that the only valid admin login is username \"Thejas Kinnigoli\" with password \"789852qwertyuiop\" (and the stored/checked value uses the existing password hashing mechanism).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "make login for admin with user name : Thejas Kinnigoli and Password : 789852qwertyuiop, no authenticate with Internet Identity (passkey)."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Calling backend.adminLogin(\"Thejas Kinnigoli\", \"789852qwertyuiop\") returns a non-null sessionId.",
-        "Calling backend.adminLogin with any other username or password returns null.",
-        "The password is not stored or compared as plaintext in backend state; it is compared using the existing hashPassword() flow."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Remove Internet Identity (passkey) authentication requirements and UI from the admin area so admin access is granted only via the username/password admin session flow.",
+      "text": "Apply a global animated neon/glow background effect across the entire website (all routes), not just within specific panels, while keeping all UI content interactive (no blocking pointer events) and ensuring legible contrast for text/icons.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "no authenticate with Internet Identity (passkey)."
+          "add neon/glow animated to hole website",
+          "1. global glowing background effect",
+          "build"
         ]
       },
       "acceptanceCriteria": [
-        "No admin page shows a prompt/button to \"Login with Internet Identity\" or any Internet Identity-based access gating.",
-        "Admin routes under /admin/* are accessible only after successful username/password login (via the existing admin session validation).",
-        "The /admin/access page is not reachable from the UI (remove it from admin navigation) and is not registered as a route, or it is replaced with an English message explaining it is unavailable because Internet Identity is disabled for admin auth.",
-        "All user-facing text related to this change is in English."
+        "All pages (e.g., /, /products, /news, /terms, /admin) display an animated neon/glow background behind the main content.",
+        "The animated background layers do not intercept clicks/scroll/inputs (e.g., links/buttons remain clickable; scrolling works normally).",
+        "Background animation respects `prefers-reduced-motion` by disabling or significantly reducing motion while retaining the neon color scheme (no rapid movement when reduced motion is enabled)."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a visible, functional close (X) button to the sidebar drawer UI so users can close it reliably; clicking the X must close the sidebar and trigger a slide-out close animation in the same direction the sidebar opens (e.g., left sidebar slides out left; right sidebar slides out right).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "and working close x button",
+          "2. sidebar",
+          "3. also trigger any animation when closing",
+          "slide out to the left/right."
+        ]
+      },
+      "acceptanceCriteria": [
+        "When the sidebar drawer is open, an X close button is visible within the sidebar UI and is keyboard accessible.",
+        "Clicking/tapping the X closes the sidebar and a slide-out animation plays (no instant disappearance).",
+        "The sidebar slides out in the same direction as its opening side (left drawers slide out left; right drawers slide out right).",
+        "No console errors occur when opening/closing the sidebar repeatedly."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files in frontend/immutablePaths (including frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui/*).",
-    "Keep all Motoko logic in the single actor at backend/main.mo; only add backend/migration.mo if an upgrade-safe state migration is required."
+    "Do not edit files under `frontend/src/components/ui` (read-only shadcn components); compose/wrap them instead.",
+    "Do not modify immutable paths listed in SYSTEM_CONTEXT (e.g., `frontend/src/main.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/hooks/useInternetIdentity.ts(x)`).",
+    "Frontend-only change; do not introduce new backend canisters or external services."
   ],
   "nonGoals": [
-    "Do not implement or require Internet Identity authentication for admin access.",
-    "Do not add third-party authentication providers.",
-    "Do not implement multi-admin management via principals (since Internet Identity is disabled for admin auth)."
+    "Adding new pages or store features unrelated to the neon background and sidebar close behavior.",
+    "Changing authentication flows (Internet Identity / customer/admin sessions).",
+    "Backend schema/state migrations (not required for this UI-only change)."
   ],
   "imageRequirements": {
     "required": [],
